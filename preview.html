@@ -32,6 +32,13 @@
 <h2>Weather states</h2>
 <div class="gal" id="wx"></div>
 
+<h2>Tap / hold actions (see log)</h2>
+<div class="cols" id="actions"></div>
+<pre id="log" style="margin:10px 20px;font-size:12px;color:#9fd3a8;white-space:pre-wrap">log:</pre>
+
+<h2>Group editor test (mock ha-form; edits update the card live)</h2>
+<div class="cols" id="edwrap" style="color:#ddd"></div>
+
 <h2>Light theme</h2>
 <div class="cols light" id="lightcols" style="padding:14px;background:#eef0f3;margin:0 14px;border-radius:14px"></div>
 <h2>Blue theme (accent override)</h2>
@@ -170,7 +177,54 @@ const wx = document.getElementById('wx');
   mk('ha-custom-icons-card', { entity: 'weather.' + slug(s), name: s, layout: 'tile' }, wx);
 });
 
-/* 5. themes */
+/* 5. tap / hold actions */
+const logEl = document.getElementById('log'); const log = (m) => (logEl.textContent += '\n' + m);
+document.addEventListener('hass-more-info', (e) => log('more-info -> ' + e.detail.entityId), true);
+window.addEventListener('location-changed', () => log('navigate -> ' + location.pathname));
+const origCall = hass.callService.bind(hass);
+hass.callService = (d, s, data, target) => { log(`callService ${d}.${s} ${JSON.stringify(data)} ${JSON.stringify(target || {})}`); return origCall(d, s, data); };
+const act = document.getElementById('actions');
+mk('ha-custom-icons-card', { entity: 'light.bedroom_light', layout: 'tile', name: 'default tile' }, act);
+mk('ha-custom-icons-card', { entity: 'light.bedroom_light', layout: 'tile', name: 'tap: more-info', tap_action: { action: 'more-info' } }, act);
+mk('ha-custom-icons-card', { entity: 'switch.kettle', layout: 'tile', name: 'tap: nav, hold: toggle', tap_action: { action: 'navigate', navigation_path: '/lovelace/kitchen' }, hold_action: { action: 'toggle' } }, act);
+mk('ha-custom-icons-card', { entity: 'switch.dryer', layout: 'tile', name: 'tap: perform-action', tap_action: { action: 'perform-action', perform_action: 'script.turn_on', target: { entity_id: 'script.party' } } }, act);
+mk('ha-custom-icons-card', { entity: 'switch.dishwasher', layout: 'tile', name: 'tap: none', tap_action: { action: 'none' } }, act);
+
+/* 6. editor test with a tiny mock of <ha-form> */
+customElements.define('ha-form', class extends HTMLElement {
+  set schema(s) { this._s = s; this._r(); } set data(d) { this._d = { ...d }; this._r(); } set hass(h) { this._h = h; }
+  _flat(s) { return s.flatMap((x) => (x.type === 'grid' ? this._flat(x.schema) : [x])); }
+  _r() {
+    if (!this._s || !this._d) return; this.innerHTML = '';
+    for (const f of this._flat(this._s)) {
+      const row = document.createElement('label'); row.style.cssText = 'display:flex;gap:6px;margin:3px 0;font-size:12px;align-items:center'; row.append(f.name + ':');
+      const sel = f.selector || {}; let inp;
+      if (sel.select) { inp = document.createElement('select'); sel.select.options.forEach((o) => { const op = document.createElement('option'); op.value = o.value ?? o; op.textContent = o.label ?? o; inp.appendChild(op); }); inp.value = this._d[f.name] ?? ''; }
+      else if (sel.boolean) { inp = document.createElement('input'); inp.type = 'checkbox'; inp.checked = !!this._d[f.name]; }
+      else if (sel.ui_action) { inp = document.createElement('select'); ['', 'toggle', 'more-info', 'none'].forEach((a) => { const op = document.createElement('option'); op.value = a; op.textContent = a || '(default)'; inp.appendChild(op); }); inp.value = this._d[f.name]?.action || ''; }
+      else { inp = document.createElement('input'); inp.value = this._d[f.name] ?? ''; if (sel.number) inp.type = 'number'; }
+      inp.dataset.f = f.name;
+      inp.addEventListener('change', () => {
+        let v = sel.boolean ? inp.checked : sel.ui_action ? (inp.value ? { action: inp.value } : undefined) : sel.number ? (inp.value === '' ? undefined : +inp.value) : inp.value;
+        this._d = { ...this._d, [f.name]: v };
+        this.dispatchEvent(new CustomEvent('value-changed', { detail: { value: this._d } }));
+      });
+      row.appendChild(inp); this.appendChild(row);
+    }
+  }
+});
+const edwrap = document.getElementById('edwrap');
+const edHost = document.createElement('div'); const edRight = stack(edwrap); edwrap.prepend(edHost);
+const ed = document.createElement('ha-custom-icons-group-card-editor');
+let edCfg = { type: 'custom:ha-custom-icons-group-card', title: 'Editor demo', entities: ['switch.kettle', { entity: 'switch.dryer', name: 'Tumbler' }, 'switch.dishwasher'] };
+const edCard = mk('ha-custom-icons-group-card', edCfg, edRight);
+const yaml = document.createElement('pre'); yaml.style.cssText = 'font-size:11px;color:#bbb;white-space:pre-wrap;margin:0'; edRight.appendChild(yaml);
+const showYaml = (c) => (yaml.textContent = JSON.stringify(c, null, 1));
+ed.hass = { ...hass, states: S }; ed.setConfig(edCfg); edHost.appendChild(ed); showYaml(edCfg);
+ed.addEventListener('config-changed', (e) => { edCfg = e.detail.config; edCard.setConfig(edCfg); edCard.hass = { ...hass, states: S }; showYaml(edCfg); ed.setConfig(edCfg); /* HA echoes the config back */ });
+window.__ed = ed; window.__cfg = () => edCfg;
+
+/* 7. themes */
 mk('ha-custom-icons-group-card', { title: 'Fans', accent: '#e65100', entities: ents(k => k.startsWith('fan.')) }, document.getElementById('lightcols'));
 mk('ha-custom-icons-group-card', { title: 'Security', accent: '#e65100', entities: ['binary_sensor.front_door','binary_sensor.hallway_motion','lock.front_door','camera.front_gate','sensor.battery_soc'].map(entity => ({ entity })) }, document.getElementById('lightcols'));
 mk('ha-custom-icons-group-card', { title: 'Energy', accent: '#4dd0e1', entities: ['sensor.solar_power','sensor.battery_soc','switch.ev_charger','weather.home'].map(entity => ({ entity })) }, document.getElementById('bluecols'));

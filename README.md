@@ -44,6 +44,11 @@ entities:
 | `master_toggle` | `true`  | hidden automatically if nothing is toggleable    |
 | `accent`        | amber   | any CSS colour                                   |
 | `icon_size`     | 34      | px                                               |
+| `tap_action`    | more-info | default for every entity (see Actions)         |
+| `hold_action`   | none    | default for every entity (see Actions)           |
+
+In the visual editor each entity can be opened to give it its **own name**, force its **icon type** when the
+auto-detection guesses wrong, or set its own tap/hold action. Re-order with **drag (⠿)** or the **↑ ↓** buttons.
 
 ### Single card
 
@@ -53,10 +58,31 @@ entity: weather.home
 layout: tile        # row (default) | tile | icon
 ```
 
-Options: `entity`, `name`, `icon`, `layout`, `accent`, `icon_size`, `show_toggle`, and for batteries
+Options: `entity`, `name`, `icon`, `layout`, `accent`, `icon_size`, `show_toggle`, `tap_action`, `hold_action`, and for batteries
 `charging_entity` (any entity that is `on`/`charging` while charging — shows a lightning bolt).
 
-Tap the icon/name for the more-info dialog (row layout) or to toggle (tile / icon layout).
+### Actions
+
+`tap_action` and `hold_action` (press ~0.5 s) use Home Assistant's standard action objects and are available per card,
+per entity, or as group-wide defaults:
+
+| `action`         | extra keys                                   |
+|------------------|----------------------------------------------|
+| `toggle`         |                                              |
+| `more-info`      |                                              |
+| `navigate`       | `navigation_path: /lovelace/kitchen`         |
+| `url`            | `url_path: https://…`                        |
+| `perform-action` | `perform_action: script.turn_on`, `data`, `target` |
+| `none`           |                                              |
+
+Defaults: **row** layout — tap opens more-info (the switch on the right toggles), hold does nothing.
+**tile / icon** layouts — tap toggles (more-info if the entity can't be toggled), hold opens more-info.
+
+```yaml
+- entity: light.hall
+  tap_action: { action: toggle }
+  hold_action: { action: navigate, navigation_path: /lovelace/lights }
+```
 
 ## Icons
 

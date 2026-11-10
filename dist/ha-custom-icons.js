@@ -727,6 +727,26 @@
   @media (prefers-reduced-motion:reduce){svg *{animation:none!important}}
   `;
 
+  /* ---------------------------------------------------------------- gestures */
+  // tap = click; hold = press for 500 ms without moving. Timers are always cleared (no leaks).
+  const bindGestures = (el, onTap, onHold, canHold) => {
+    let timer = null, held = false, sx = 0, sy = 0;
+    const clear = () => { if (timer) { clearTimeout(timer); timer = null; } };
+    el.addEventListener('pointerdown', (e) => {
+      if (e.button > 0) return;
+      held = false; sx = e.clientX; sy = e.clientY; clear();
+      if (canHold()) timer = setTimeout(() => { timer = null; held = true; onHold(); }, 500);
+    });
+    ['pointerup', 'pointercancel', 'pointerleave'].forEach((t) => el.addEventListener(t, clear));
+    el.addEventListener('pointermove', (e) => { if (timer && Math.hypot(e.clientX - sx, e.clientY - sy) > 10) clear(); });
+    el.addEventListener('click', (e) => {
+      if (e.target.closest && e.target.closest('.sw')) return;
+      if (held) { held = false; return; }
+      onTap();
+    });
+    el.addEventListener('contextmenu', (e) => { if (canHold()) e.preventDefault(); });
+  };
+
   /* ------------------------------------------------------------------- row */
   class Row {
     constructor(cfg, layout, fire) {
@@ -754,10 +774,49 @@
         ctl.innerHTML = `<span class="stt"></span>`;
         this.sttEl = ctl.firstChild;
       }
-      const tapIcon = layout === 'row' ? () => this.moreInfo() : () => (this.toggleable ? this.toggle() : this.moreInfo());
-      this.icoEl.addEventListener('click', tapIcon);
-      el.querySelector('.txt').addEventListener('click', () => this.moreInfo());
+      // tap/hold on the icon + name (row layout) or on the whole tile (tile / icon layouts)
+      const onTap = () => this.runAction(this.tapAction());
+      const onHold = () => this.runAction(this.holdAction());
+      const canHold = () => this.holdAction().action !== 'none';
+      if (layout === 'row') {
+        this.icoEl.setAttribute('tabindex', '0');
+        this.icoEl.setAttribute('role', 'button');
+        this.icoEl.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onTap(); } });
+        bindGestures(this.icoEl, onTap, onHold, canHold);
+        bindGestures(el.querySelector('.txt'), onTap, onHold, canHold);
+      } else {
+        bindGestures(el, onTap, onHold, canHold);
+      }
       this.setIcon(detectIcon(cfg, null));
+    }
+    /* actions: HA-style objects, e.g. {action:'toggle'} — toggle | more-info | navigate | url | perform-action | none */
+    tapAction() { return this.cfg.tap_action || { action: this.layout === 'row' || !this.toggleable ? 'more-info' : 'toggle' }; }
+    holdAction() { return this.cfg.hold_action || { action: this.layout === 'row' ? 'none' : 'more-info' }; }
+    runAction(a) {
+      const notify = (err) => this.fire('hass-notification', { message: `Action failed: ${err?.message || err}` });
+      switch (a?.action) {
+        case 'toggle': this.toggle(); break;
+        case 'more-info': this.moreInfo(); break;
+        case 'navigate':
+          if (a.navigation_path) {
+            window.history.pushState(null, '', a.navigation_path);
+            window.dispatchEvent(new CustomEvent('location-changed', { detail: { replace: false } }));
+          }
+          break;
+        case 'url':
+          if (a.url_path && !/^\s*javascript:/i.test(a.url_path)) window.open(a.url_path, '_blank', 'noopener');
+          break;
+        case 'perform-action':
+        case 'call-service': {
+          const svc = a.perform_action || a.service;
+          if (!svc || !svc.includes('.') || !this.hass) break;
+          const [d, s] = svc.split('.');
+          const p = this.hass.callService(d, s, a.data || a.service_data || {}, a.target);
+          if (p && p.catch) p.catch(notify);
+          break;
+        }
+        default: break; // 'none'
+      }
     }
     setIcon(type) {
       if (type === this.type) return;
@@ -884,6 +943,8 @@
         const c = cleanEntity(e);
         if (config.accent && !c.accent) c.accent = config.accent;
         if (config.icon_size && !c.icon_size) c.icon_size = config.icon_size;
+        if (config.tap_action && !c.tap_action) c.tap_action = config.tap_action;   // group-wide defaults,
+        if (config.hold_action && !c.hold_action) c.hold_action = config.hold_action; // per-entity values win
         return new Row(c, 'row', fire);
       });
       const list = this.shadowRoot.querySelector('.list');
@@ -916,61 +977,179 @@
   }
 
   /* ---------------------------------------------------- visual card editors */
-  const ICON_OPTIONS = () => [{ value: '', label: 'Auto (recommended)' }, ...Object.keys(ICONS).sort().map((k) => ({ value: k, label: k }))];
-  const LABELS = { entity: 'Entity', name: 'Name (optional)', icon: 'Icon', layout: 'Layout', accent: 'Accent colour (optional, e.g. #ffb020)', title: 'Title', entities: 'Entities', master_toggle: 'Master toggle', icon_size: 'Icon size in px (optional)', charging_entity: 'Charging entity (battery icons)' };
+  const ICON_OPTIONS = () => [{ value: '', label: 'Auto-detect (recommended)' }, ...Object.keys(ICONS).sort().map((k) => ({ value: k, label: k }))];
+  const LABELS = {
+    entity: 'Entity', name: 'Name (optional)', icon: 'Icon type', layout: 'Layout',
+    accent: 'Accent colour (optional, e.g. #ffb020)', title: 'Title', master_toggle: 'Master toggle',
+    icon_size: 'Icon size in px (optional)', charging_entity: 'Charging entity (battery icons)',
+    tap_action: 'Tap action', hold_action: 'Hold action', add: 'Add entity',
+  };
+  const computeLabel = (s) => LABELS[s.name] || s.name;
+  const actionFields = (tapDefault) => [
+    { name: 'tap_action', selector: { ui_action: { default_action: tapDefault } } },
+    { name: 'hold_action', selector: { ui_action: { default_action: 'none' } } },
+  ];
+  // drop empty values so saved YAML stays tidy
+  const prune = (o) => {
+    const r = {};
+    for (const [k, v] of Object.entries(o || {})) {
+      if (v === '' || v == null) continue;
+      if (typeof v === 'object' && !Array.isArray(v) && !Object.keys(v).length) continue;
+      r[k] = v;
+    }
+    return r;
+  };
 
   class EditorBase extends HTMLElement {
-    setConfig(c) { this._config = c; this._render(); }
-    set hass(h) { this._hass = h; if (this._form) this._form.hass = h; }
-    _render() {
-      if (!this._form) {
-        this._form = document.createElement('ha-form');
-        this._form.computeLabel = (s) => LABELS[s.name] || s.name;
-        this._form.addEventListener('value-changed', (e) => {
-          e.stopPropagation();
-          const cfg = this._fromForm(e.detail.value);
-          this._config = cfg;
-          this.dispatchEvent(new CustomEvent('config-changed', { detail: { config: cfg }, bubbles: true, composed: true }));
-        });
-        this.appendChild(this._form);
-      }
-      this._form.hass = this._hass;
-      this._form.schema = this._schema();
-      this._form.data = this._toForm(this._config || {});
+    setConfig(c) {
+      const s = JSON.stringify(c);
+      this._config = c;
+      if (s === this._last) return; // echo of our own change: don't rebuild (keeps input focus)
+      this._last = s;
+      this._render();
+    }
+    set hass(h) { this._hass = h; (this._forms || []).forEach((f) => (f.hass = h)); }
+    _emit(cfg) {
+      this._config = cfg;
+      this._last = JSON.stringify(cfg);
+      this.dispatchEvent(new CustomEvent('config-changed', { detail: { config: cfg }, bubbles: true, composed: true }));
+    }
+    _form(schema, data, onChange) {
+      const f = document.createElement('ha-form');
+      f.hass = this._hass; f.schema = schema; f.data = data; f.computeLabel = computeLabel;
+      f.addEventListener('value-changed', (e) => { e.stopPropagation(); onChange(e.detail.value); });
+      (this._forms = this._forms || []).push(f);
+      return f;
     }
   }
+
   class HaCustomIconsCardEditor extends EditorBase {
-    _schema() {
-      return [
+    _render() {
+      this._forms = [];
+      this.innerHTML = '';
+      const schema = [
         { name: 'entity', required: true, selector: { entity: {} } },
         { name: 'name', selector: { text: {} } },
         { type: 'grid', name: '', schema: [
           { name: 'icon', selector: { select: { options: ICON_OPTIONS(), mode: 'dropdown' } } },
           { name: 'layout', selector: { select: { options: ['row', 'tile', 'icon'], mode: 'dropdown' } } },
         ] },
+        ...actionFields('more-info'),
         { name: 'accent', selector: { text: {} } },
         { name: 'icon_size', selector: { number: { min: 16, max: 120, mode: 'box' } } },
       ];
+      const c = this._config || {};
+      this.appendChild(this._form(schema, { layout: 'row', icon: '', ...c }, (v) =>
+        this._emit({ type: c.type || 'custom:ha-custom-icons-card', ...prune(v) })));
     }
-    _toForm(c) { return { layout: 'row', icon: '', ...c }; }
-    _fromForm(v) { const o = { ...v }; ['icon', 'name', 'accent', 'icon_size'].forEach((k) => (o[k] === '' || o[k] == null) && delete o[k]); return { type: this._config?.type || 'custom:ha-custom-icons-card', ...o }; }
   }
+
   class HaCustomIconsGroupCardEditor extends EditorBase {
-    _schema() {
-      return [
-        { name: 'title', selector: { text: {} } },
-        { name: 'entities', selector: { entity: { multiple: true } } },
-        { name: 'master_toggle', selector: { boolean: {} } },
-        { name: 'accent', selector: { text: {} } },
-        { name: 'icon_size', selector: { number: { min: 16, max: 120, mode: 'box' } } },
-      ];
+    constructor() { super(); this._open = new Set(); }
+    _items() { return (this._config?.entities || []).map((e) => (typeof e === 'string' ? { entity: e } : { ...e })); }
+    _commit(items, rerender) {
+      const ents = items.map((i) => { const p = prune(i); return Object.keys(p).length === 1 && p.entity ? p.entity : p; });
+      this._emit({ ...this._config, entities: ents });
+      if (rerender) this._render();
     }
-    _toForm(c) { return { master_toggle: true, ...c, entities: (c.entities || []).map((e) => (typeof e === 'string' ? e : e.entity)) }; }
-    _fromForm(v) {
-      const prev = new Map((this._config?.entities || []).filter((e) => typeof e === 'object').map((e) => [e.entity, e])); // keep per-entity name/icon set in YAML
-      const o = { ...v, entities: (v.entities || []).map((id) => prev.get(id) || id) };
-      ['title', 'accent', 'icon_size'].forEach((k) => (o[k] === '' || o[k] == null) && delete o[k]);
-      return { type: this._config?.type || 'custom:ha-custom-icons-group-card', ...o };
+    _label(item) {
+      const st = this._hass?.states?.[item.entity];
+      const real = st?.attributes?.friendly_name || item.entity;
+      return item.name ? `${item.name} · ${item.entity}` : real === item.entity ? item.entity : `${real} · ${item.entity}`;
+    }
+    _reorder(from, to) {
+      const items = this._items();
+      if (from === to || from < 0 || to < 0 || from >= items.length || to >= items.length) return;
+      const order = items.map((_, i) => i);
+      const [m] = order.splice(from, 1); order.splice(to, 0, m);
+      this._open = new Set([...this._open].map((i) => order.indexOf(i)));
+      this._commit(order.map((i) => items[i]), true);
+    }
+    _remove(idx) {
+      const items = this._items(); items.splice(idx, 1);
+      this._open = new Set([...this._open].filter((i) => i !== idx).map((i) => (i > idx ? i - 1 : i)));
+      this._commit(items, true);
+    }
+    _render() {
+      this._forms = [];
+      this.innerHTML = '';
+      const c = this._config || {};
+      const style = document.createElement('style');
+      style.textContent = `
+        .it{border:1px solid var(--divider-color,rgba(127,127,127,.35));border-radius:10px;margin:8px 0;padding:0 10px}
+        .it.over{outline:2px dashed var(--primary-color,#03a9f4)}
+        .it summary{display:flex;align-items:center;gap:8px;padding:8px 0;cursor:pointer;list-style:none}
+        .it summary::-webkit-details-marker{display:none}
+        .h{cursor:grab;opacity:.6;user-select:none;font-size:18px;padding:0 2px}
+        .t{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+        .b button{background:none;border:0;cursor:pointer;color:var(--primary-text-color);font-size:16px;padding:4px 7px;opacity:.75}
+        .b button:hover{opacity:1} .b button[disabled]{opacity:.25;cursor:default}
+        h4{margin:18px 0 2px;font-weight:500;color:var(--primary-text-color)}
+        .hint{font-size:12px;color:var(--secondary-text-color);margin:0 0 6px}`;
+      this.appendChild(style);
+
+      // card-level options
+      this.appendChild(this._form([
+        { name: 'title', selector: { text: {} } },
+        { type: 'grid', name: '', schema: [
+          { name: 'master_toggle', selector: { boolean: {} } },
+          { name: 'icon_size', selector: { number: { min: 16, max: 120, mode: 'box' } } },
+        ] },
+        { name: 'accent', selector: { text: {} } },
+        ...actionFields('more-info'),
+      ], { master_toggle: true, ...c, entities: undefined }, (v) =>
+        this._emit({ ...prune({ ...v, type: c.type || 'custom:ha-custom-icons-group-card' }), entities: c.entities || [] })));
+
+      // entity list
+      const h = document.createElement('h4'); h.textContent = 'Entities'; this.appendChild(h);
+      const hint = document.createElement('p'); hint.className = 'hint';
+      hint.textContent = 'Drag ⠿ or use ↑ ↓ to re-order. Open an entity to rename it, force its icon type or set its own tap/hold action.';
+      this.appendChild(hint);
+      const items = this._items();
+      items.forEach((item, idx) => {
+        const det = document.createElement('details'); det.className = 'it';
+        det.open = this._open.has(idx);
+        det.addEventListener('toggle', () => (det.open ? this._open.add(idx) : this._open.delete(idx)));
+        const sum = document.createElement('summary');
+        const handle = document.createElement('span'); handle.className = 'h'; handle.textContent = '⠿'; handle.draggable = true; handle.title = 'Drag to re-order';
+        const title = document.createElement('span'); title.className = 't'; title.textContent = this._label(item);
+        const btns = document.createElement('span'); btns.className = 'b';
+        const mkBtn = (txt, tip, fn, disabled) => {
+          const b = document.createElement('button'); b.type = 'button'; b.textContent = txt; b.title = tip; b.disabled = !!disabled;
+          b.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); fn(); });
+          return b;
+        };
+        btns.append(mkBtn('↑', 'Move up', () => this._reorder(idx, idx - 1), idx === 0), mkBtn('↓', 'Move down', () => this._reorder(idx, idx + 1), idx === items.length - 1), mkBtn('✕', 'Remove', () => this._remove(idx)));
+        sum.append(handle, title, btns);
+        det.appendChild(sum);
+        // drag & drop (handle is the drag source, each row a drop target)
+        handle.addEventListener('dragstart', (e) => { this._drag = idx; e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', String(idx)); });
+        handle.addEventListener('dragend', () => { this._drag = null; this.querySelectorAll('.it.over').forEach((n) => n.classList.remove('over')); });
+        det.addEventListener('dragover', (e) => { if (this._drag != null) { e.preventDefault(); det.classList.add('over'); } });
+        det.addEventListener('dragleave', () => det.classList.remove('over'));
+        det.addEventListener('drop', (e) => { e.preventDefault(); det.classList.remove('over'); const from = this._drag; this._drag = null; if (from != null) this._reorder(from, idx); });
+        // per-entity options
+        det.appendChild(this._form([
+          { name: 'entity', required: true, selector: { entity: {} } },
+          { name: 'name', selector: { text: {} } },
+          { name: 'icon', selector: { select: { options: ICON_OPTIONS(), mode: 'dropdown' } } },
+          ...actionFields(c.tap_action?.action || 'more-info'),
+        ], { icon: '', ...item }, (v) => {
+          const all = this._items();
+          if (!v.entity) v.entity = all[idx].entity;
+          all[idx] = prune(v);
+          title.textContent = this._label(all[idx]);
+          this._commit(all, false);
+        }));
+        this.appendChild(det);
+      });
+
+      // add
+      this.appendChild(this._form([{ name: 'add', selector: { entity: {} } }], { add: '' }, (v) => {
+        if (!v.add) return;
+        this._open.add(this._items().length);
+        this._commit([...this._items(), { entity: v.add }], true);
+      }));
     }
   }
 
