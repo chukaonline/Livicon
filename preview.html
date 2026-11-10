@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>HA Custom Icons preview</title>
+<title>Livicon preview</title>
 <style>
   :root{--primary-text-color:#e8eaed;--secondary-text-color:#a0a5ad;--ha-card-background:rgba(30,26,24,.78);
         font-family:Roboto,-apple-system,"Segoe UI",sans-serif}
@@ -29,6 +29,9 @@
 <h2>Gallery — tap a tile to toggle (top: on, bottom: off)</h2>
 <div class="gal" id="gallery"></div>
 
+<h2>3D style (<code>style: 3d</code>) — on first, then off</h2>
+<div class="gal" id="gallery3d"></div>
+
 <h2>Weather states</h2>
 <div class="gal" id="wx"></div>
 
@@ -44,7 +47,7 @@
 <h2>Blue theme (accent override)</h2>
 <div class="cols blue" id="bluecols" style="padding:14px;background:#0c1626;margin:0 14px 40px;border-radius:14px"></div>
 
-<script src="dist/ha-custom-icons.js"></script>
+<script src="dist/livicon.js"></script>
 <script>
 /* ---- mock Home Assistant ---- */
 const S = {};
@@ -120,24 +123,26 @@ const ents = (pred) => Object.keys(S).filter(pred).map(entity => ({ entity }));
 /* 1. existing dashboard */
 const control = document.getElementById('control');
 const c1 = stack(control), c2 = stack(control), c3 = stack(control), c4 = stack(control);
-mk('ha-custom-icons-group-card', { title: 'Fans', entities: ents(k => k.startsWith('fan.')) }, c1);
-mk('ha-custom-icons-group-card', { title: 'Heater and AC', entities: ents(k => /^climate\.(?!thermostat)/.test(k)) }, c1);
-mk('ha-custom-icons-group-card', { title: 'Refrigerators', entities: ents(k => /fridge|freezer/.test(k)) }, c2);
-mk('ha-custom-icons-card', { entity: 'switch.family_room_extension', layout: 'tile' }, c2);
-mk('ha-custom-icons-group-card', { title: 'Socket', entities: [
+mk('livicon-group-card', { title: 'Fans', entities: ents(k => k.startsWith('fan.')) }, c1);
+mk('livicon-group-card', { title: 'Heater and AC', entities: ents(k => /^climate\.(?!thermostat)/.test(k)) }, c1);
+mk('livicon-group-card', { title: 'Refrigerators', entities: ents(k => /fridge|freezer/.test(k)) }, c2);
+mk('livicon-card', { entity: 'switch.family_room_extension', layout: 'tile' }, c2);
+mk('livicon-group-card', { title: 'Socket', entities: [
   'washing_machine','kitchen_extractor','tv_socket_left','tv_socket_right','blender_socket','pressure_pump','sewing_machine','living_room_socket_left',
   'living_room_socket_right','familytv','fence_charger','inverter_charge_controller','water_pump','bedroom_tv'].map(n => ({ entity: 'switch.' + n })) }, c3);
-mk('ha-custom-icons-group-card', { title: 'Lights', entities: ents(k => k.startsWith('light.')) }, c4);
+mk('livicon-group-card', { title: 'Lights', entities: ents(k => k.startsWith('light.')) }, c4);
 
 /* 2. typical home */
 const home = document.getElementById('home');
 const h1 = stack(home), h2 = stack(home), h3 = stack(home), h4 = stack(home);
-mk('ha-custom-icons-group-card', { title: 'Energy', entities: ['sensor.solar_power','sensor.battery_soc','sensor.inverter_output','switch.ev_charger','sensor.phone_battery'].map(entity => ({ entity })) }, h1);
-mk('ha-custom-icons-group-card', { title: 'Security', entities: ['binary_sensor.front_door','binary_sensor.kitchen_window','binary_sensor.hallway_motion','binary_sensor.living_room_presence','lock.front_door','camera.front_gate','alarm_control_panel.home','binary_sensor.smoke_detector','binary_sensor.kitchen_leak','doorbell.front'].map(entity => ({ entity })) }, h2);
-mk('ha-custom-icons-group-card', { title: 'Comfort', entities: ['climate.thermostat','sensor.lounge_temperature','sensor.lounge_humidity','cover.garage_door','cover.lounge_blinds','water_heater.geyser','switch.air_purifier','binary_sensor.wifi','media_player.kitchen_speaker'].map(entity => ({ entity })) }, h3);
-mk('ha-custom-icons-card', { entity: 'weather.home', layout: 'tile' }, h4);
-mk('ha-custom-icons-card', { entity: 'vacuum.robo', layout: 'tile' }, h4);
-mk('ha-custom-icons-group-card', { title: 'Kitchen & laundry', entities: ['switch.dishwasher','switch.dryer','switch.kettle'].map(entity => ({ entity })) }, h4);
+mk('livicon-group-card', { title: 'Energy', entities: ['sensor.solar_power','sensor.battery_soc','sensor.inverter_output','switch.ev_charger','sensor.phone_battery'].map(entity => ({ entity })) }, h1);
+mk('livicon-group-card', { title: 'Security', entities: ['binary_sensor.front_door','binary_sensor.kitchen_window','binary_sensor.hallway_motion','binary_sensor.living_room_presence','lock.front_door','camera.front_gate','alarm_control_panel.home','binary_sensor.smoke_detector','binary_sensor.kitchen_leak','doorbell.front'].map(entity => ({ entity })) }, h2);
+mk('livicon-group-card', { title: 'Comfort', entities: ['climate.thermostat','sensor.lounge_temperature','sensor.lounge_humidity','cover.garage_door','cover.lounge_blinds','water_heater.geyser','switch.air_purifier','binary_sensor.wifi','media_player.kitchen_speaker'].map(entity => ({ entity })) }, h3);
+mk('livicon-group-card', { title: '3D Energy', style: '3d', entities: ['sensor.solar_power','sensor.battery_soc','sensor.inverter_output','switch.ev_charger','sensor.phone_battery'].map(entity => ({ entity })) }, h4);
+mk('livicon-card', { entity: 'weather.home', layout: 'tile' }, h4);
+mk('livicon-card', { entity: 'weather.home', layout: 'tile', style: '3d' }, h4);
+mk('livicon-card', { entity: 'vacuum.robo', layout: 'tile' }, h4);
+mk('livicon-group-card', { title: 'Kitchen & laundry', entities: ['switch.dishwasher','switch.dryer','switch.kettle'].map(entity => ({ entity })) }, h4);
 
 /* 3. gallery: one mock entity per icon with realistic domain/state */
 const G = {
@@ -162,20 +167,23 @@ const G = {
 };
 const gal = document.getElementById('gallery');
 const tiles = [];
-window.haCustomIcons.forEach(t => [1, 0].forEach(on => {
+window.liviconIcons.forEach(t => [1, 0].forEach(on => {
   const g = G[t] || { d: 'switch', on: 'on', off: 'off' };
   const e = `${g.d}.gal_${t}_${on}`;
   add(e, t + (on ? '' : ' (off)'), on ? g.on : g.off, g.a || {});
   tiles.push([e, t, on]);
 }));
-tiles.filter(x => x[2]).concat(tiles.filter(x => !x[2])).forEach(([e, t]) => mk('ha-custom-icons-card', { entity: e, icon: t, layout: 'tile' }, gal));
+tiles.filter(x => x[2]).concat(tiles.filter(x => !x[2])).forEach(([e, t]) => mk('livicon-card', { entity: e, icon: t, layout: 'tile' }, gal));
 
-/* 4. weather states */
+/* 3D gallery: same entities, style 3d */
+const gal3 = document.getElementById('gallery3d');
+tiles.filter(x => x[2]).concat(tiles.filter(x => !x[2])).forEach(([e, t]) => mk('livicon-card', { entity: e, icon: t, layout: 'tile', style: '3d' }, gal3));
+
+/* 4. weather states (flat row, 3D row) */
 const wx = document.getElementById('wx');
-['sunny','clear-night','partlycloudy','cloudy','rainy','pouring','snowy','snowy-rainy','lightning','lightning-rainy','fog','windy','hail'].forEach(s => {
-  add('weather.' + slug(s), s, s, { temperature: 21 });
-  mk('ha-custom-icons-card', { entity: 'weather.' + slug(s), name: s, layout: 'tile' }, wx);
-});
+const WXS = ['sunny','clear-night','partlycloudy','cloudy','rainy','pouring','snowy','snowy-rainy','lightning','lightning-rainy','fog','windy','hail'];
+WXS.forEach(s => { add('weather.' + slug(s), s, s, { temperature: 21 }); mk('livicon-card', { entity: 'weather.' + slug(s), name: s, layout: 'tile' }, wx); });
+WXS.forEach(s => mk('livicon-card', { entity: 'weather.' + slug(s), name: s + ' 3D', layout: 'tile', style: '3d' }, wx));
 
 /* 5. tap / hold actions */
 const logEl = document.getElementById('log'); const log = (m) => (logEl.textContent += '\n' + m);
@@ -184,11 +192,11 @@ window.addEventListener('location-changed', () => log('navigate -> ' + location.
 const origCall = hass.callService.bind(hass);
 hass.callService = (d, s, data, target) => { log(`callService ${d}.${s} ${JSON.stringify(data)} ${JSON.stringify(target || {})}`); return origCall(d, s, data); };
 const act = document.getElementById('actions');
-mk('ha-custom-icons-card', { entity: 'light.bedroom_light', layout: 'tile', name: 'default tile' }, act);
-mk('ha-custom-icons-card', { entity: 'light.bedroom_light', layout: 'tile', name: 'tap: more-info', tap_action: { action: 'more-info' } }, act);
-mk('ha-custom-icons-card', { entity: 'switch.kettle', layout: 'tile', name: 'tap: nav, hold: toggle', tap_action: { action: 'navigate', navigation_path: '/lovelace/kitchen' }, hold_action: { action: 'toggle' } }, act);
-mk('ha-custom-icons-card', { entity: 'switch.dryer', layout: 'tile', name: 'tap: perform-action', tap_action: { action: 'perform-action', perform_action: 'script.turn_on', target: { entity_id: 'script.party' } } }, act);
-mk('ha-custom-icons-card', { entity: 'switch.dishwasher', layout: 'tile', name: 'tap: none', tap_action: { action: 'none' } }, act);
+mk('livicon-card', { entity: 'light.bedroom_light', layout: 'tile', name: 'default tile' }, act);
+mk('livicon-card', { entity: 'light.bedroom_light', layout: 'tile', name: 'tap: more-info', tap_action: { action: 'more-info' } }, act);
+mk('livicon-card', { entity: 'switch.kettle', layout: 'tile', name: 'tap: nav, hold: toggle', tap_action: { action: 'navigate', navigation_path: '/lovelace/kitchen' }, hold_action: { action: 'toggle' } }, act);
+mk('livicon-card', { entity: 'switch.dryer', layout: 'tile', name: 'tap: perform-action', tap_action: { action: 'perform-action', perform_action: 'script.turn_on', target: { entity_id: 'script.party' } } }, act);
+mk('livicon-card', { entity: 'switch.dishwasher', layout: 'tile', name: 'tap: none', tap_action: { action: 'none' } }, act);
 
 /* 6. editor test with a tiny mock of <ha-form> */
 customElements.define('ha-form', class extends HTMLElement {
@@ -215,9 +223,9 @@ customElements.define('ha-form', class extends HTMLElement {
 });
 const edwrap = document.getElementById('edwrap');
 const edHost = document.createElement('div'); const edRight = stack(edwrap); edwrap.prepend(edHost);
-const ed = document.createElement('ha-custom-icons-group-card-editor');
-let edCfg = { type: 'custom:ha-custom-icons-group-card', title: 'Editor demo', entities: ['switch.kettle', { entity: 'switch.dryer', name: 'Tumbler' }, 'switch.dishwasher'] };
-const edCard = mk('ha-custom-icons-group-card', edCfg, edRight);
+const ed = document.createElement('livicon-group-card-editor');
+let edCfg = { type: 'custom:livicon-group-card', title: 'Editor demo', entities: ['switch.kettle', { entity: 'switch.dryer', name: 'Tumbler' }, 'switch.dishwasher'] };
+const edCard = mk('livicon-group-card', edCfg, edRight);
 const yaml = document.createElement('pre'); yaml.style.cssText = 'font-size:11px;color:#bbb;white-space:pre-wrap;margin:0'; edRight.appendChild(yaml);
 const showYaml = (c) => (yaml.textContent = JSON.stringify(c, null, 1));
 ed.hass = { ...hass, states: S }; ed.setConfig(edCfg); edHost.appendChild(ed); showYaml(edCfg);
@@ -225,9 +233,10 @@ ed.addEventListener('config-changed', (e) => { edCfg = e.detail.config; edCard.s
 window.__ed = ed; window.__cfg = () => edCfg;
 
 /* 7. themes */
-mk('ha-custom-icons-group-card', { title: 'Fans', accent: '#e65100', entities: ents(k => k.startsWith('fan.')) }, document.getElementById('lightcols'));
-mk('ha-custom-icons-group-card', { title: 'Security', accent: '#e65100', entities: ['binary_sensor.front_door','binary_sensor.hallway_motion','lock.front_door','camera.front_gate','sensor.battery_soc'].map(entity => ({ entity })) }, document.getElementById('lightcols'));
-mk('ha-custom-icons-group-card', { title: 'Energy', accent: '#4dd0e1', entities: ['sensor.solar_power','sensor.battery_soc','switch.ev_charger','weather.home'].map(entity => ({ entity })) }, document.getElementById('bluecols'));
+mk('livicon-group-card', { title: 'Fans', accent: '#e65100', entities: ents(k => k.startsWith('fan.')) }, document.getElementById('lightcols'));
+mk('livicon-group-card', { title: 'Home 3D', style: '3d', accent: '#e65100', entities: ['fan.ifeatu_fan','switch.kettle','switch.dryer','binary_sensor.front_door','lock.front_door','sensor.battery_soc'].map(entity => ({ entity })) }, document.getElementById('lightcols'));
+mk('livicon-group-card', { title: 'Security', accent: '#e65100', entities: ['binary_sensor.front_door','binary_sensor.hallway_motion','lock.front_door','camera.front_gate','sensor.battery_soc'].map(entity => ({ entity })) }, document.getElementById('lightcols'));
+mk('livicon-group-card', { title: 'Energy', accent: '#4dd0e1', entities: ['sensor.solar_power','sensor.battery_soc','switch.ev_charger','weather.home'].map(entity => ({ entity })) }, document.getElementById('bluecols'));
 render();
 </script>
 </body>

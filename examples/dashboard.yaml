@@ -1,4 +1,4 @@
-# Example "Control" view using HA Custom Icons.
+# Example "Control" view using Livicon.
 # ⚠ The entity IDs below are GUESSES made from the device names — replace them with your real
 #   ones (Settings → Devices & services → Entities), or send the list and I'll generate this for you.
 title: Control
@@ -7,13 +7,13 @@ type: sections        # use `masonry` if that's what your dashboard uses and dro
 sections:
   - type: grid
     cards:
-      - type: custom:ha-custom-icons-group-card
+      - type: custom:livicon-group-card
         title: Fans
         entities:
           - switch.ifeatu_fan
           - switch.ebube_fan
           - switch.daddy_room_fan
-      - type: custom:ha-custom-icons-group-card
+      - type: custom:livicon-group-card
         title: Heater and AC
         entities:
           - climate.dboy_heater
@@ -25,19 +25,19 @@ sections:
           - climate.guest_ac
   - type: grid
     cards:
-      - type: custom:ha-custom-icons-group-card
+      - type: custom:livicon-group-card
         title: Refrigerators
         entities:
           - switch.kitchen_fridge
           - switch.deep_freezer
           - switch.kitchen_freezer
           - switch.bedroom_fridge
-      - type: custom:ha-custom-icons-card
+      - type: custom:livicon-card
         entity: switch.family_room_extension
         layout: tile
   - type: grid
     cards:
-      - type: custom:ha-custom-icons-group-card
+      - type: custom:livicon-group-card
         title: Socket
         entities:
           - switch.washing_machine
@@ -56,7 +56,7 @@ sections:
           - switch.bedroom_tv
   - type: grid
     cards:
-      - type: custom:ha-custom-icons-group-card
+      - type: custom:livicon-group-card
         title: Lights
         entities:
           - light.kitchen_light

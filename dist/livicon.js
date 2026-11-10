@@ -1,16 +1,17 @@
 /*!
- * HA Custom Icons — animated device icons for Home Assistant
+ * Livicon — animated device icons for Home Assistant
  * https://github.com/chukaonline/HA-Custom-Icons   (MIT, original artwork, no dependencies)
  *
- *   custom:ha-custom-icons-card        one device   (layout: row | tile | icon)
- *   custom:ha-custom-icons-group-card  titled list with master toggle
+ *   custom:livicon-card        one device   (layout: row | tile | icon)
+ *   custom:livicon-group-card  titled list with master toggle
  *
+ * `style: 3d` switches every icon to the realistic 3D look (default `flat`).
  * The icon is chosen automatically from the entity (device_class, domain, name) or set with `icon:`.
  * Colours come from the active HA theme (--primary-text-color etc.) so it works with any theme;
  * override with `accent:` or the CSS variables --tk-accent / --tk-off / --tk-body.
  */
 (() => {
-  const VERSION = '2.0.0';
+  const VERSION = '2.1.0';
 
   /* ------------------------------------------------------------------ icons
    * 48x48 grid. Helper classes (see STYLE): ln outline · fl solid · soft faint fill ·
@@ -444,6 +445,465 @@
       <circle class="fl" cx="24" cy="36" r="3.2"/>`,
   };
 
+  /* ===================================================================== 3D STYLE
+   * `style: 3d` — same icon names, same state animations, drawn with gradients, depth and soft shadows.
+   * Light comes from the top-left. Lit parts are two shapes: a dull "off" one and a coloured `.fx` overlay
+   * that fades in when the device is on. Materials are self-contained (work on any theme). */
+  const DEFS3D = `<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+    <linearGradient id="g-body" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff"/><stop offset=".55" stop-color="#e4e8ef"/><stop offset="1" stop-color="#b6bfcc"/></linearGradient>
+    <linearGradient id="g-side" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#b7bfcc"/><stop offset="1" stop-color="#7a8394"/></linearGradient>
+    <linearGradient id="g-top" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#e9edf3"/><stop offset="1" stop-color="#fff"/></linearGradient>
+    <linearGradient id="g-dark" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#4b5363"/><stop offset="1" stop-color="#15181f"/></linearGradient>
+    <linearGradient id="g-ds" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2b303a"/><stop offset="1" stop-color="#0c0e12"/></linearGradient>
+    <linearGradient id="g-cyl" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#fff"/><stop offset=".3" stop-color="#e2e6ed"/><stop offset=".75" stop-color="#b3bbc7"/><stop offset="1" stop-color="#8b94a2"/></linearGradient>
+    <linearGradient id="g-cylh" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff"/><stop offset=".35" stop-color="#dfe4eb"/><stop offset=".8" stop-color="#aab2be"/><stop offset="1" stop-color="#848d9b"/></linearGradient>
+    <linearGradient id="g-steel" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#f7f9fb"/><stop offset=".35" stop-color="#aab2be"/><stop offset=".6" stop-color="#eef1f5"/><stop offset="1" stop-color="#8a93a1"/></linearGradient>
+    <linearGradient id="g-glass" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".6"/><stop offset="1" stop-color="#cfe3f5" stop-opacity=".14"/></linearGradient>
+    <linearGradient id="g-gloss" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".85"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
+    <linearGradient id="g-wood" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#dba46e"/><stop offset="1" stop-color="#8b5a2b"/></linearGradient>
+    <linearGradient id="g-pv" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#4a7be0"/><stop offset=".6" stop-color="#1b3a85"/><stop offset="1" stop-color="#0f2152"/></linearGradient>
+    <linearGradient id="g-water" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8fdcff" stop-opacity=".95"/><stop offset="1" stop-color="#0288d1" stop-opacity=".95"/></linearGradient>
+    <linearGradient id="g-cloud" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#b6c2d3"/></linearGradient>
+    <radialGradient id="g-sphere" cx=".35" cy=".3" r=".85"><stop offset="0" stop-color="#fff"/><stop offset=".5" stop-color="#d3dae4"/><stop offset="1" stop-color="#8590a1"/></radialGradient>
+    <radialGradient id="g-off" cx=".35" cy=".3" r=".85"><stop offset="0" stop-color="#eef0f4"/><stop offset=".6" stop-color="#aab1bd"/><stop offset="1" stop-color="#727b8a"/></radialGradient>
+    <radialGradient id="g-amber" cx=".38" cy=".32" r=".85"><stop offset="0" stop-color="#fff8d6"/><stop offset=".45" stop-color="#ffc83d"/><stop offset="1" stop-color="#d98200"/></radialGradient>
+    <radialGradient id="g-cool" cx=".38" cy=".32" r=".85"><stop offset="0" stop-color="#eaf8ff"/><stop offset=".45" stop-color="#4fc3f7"/><stop offset="1" stop-color="#0277bd"/></radialGradient>
+    <radialGradient id="g-hot" cx=".38" cy=".32" r=".85"><stop offset="0" stop-color="#ffe5d9"/><stop offset=".45" stop-color="#ff7043"/><stop offset="1" stop-color="#bf360c"/></radialGradient>
+    <radialGradient id="g-green" cx=".38" cy=".32" r=".85"><stop offset="0" stop-color="#eaffec"/><stop offset=".45" stop-color="#66bb6a"/><stop offset="1" stop-color="#2e7d32"/></radialGradient>
+    <radialGradient id="g-red" cx=".38" cy=".32" r=".85"><stop offset="0" stop-color="#ffe6e4"/><stop offset=".45" stop-color="#ef5350"/><stop offset="1" stop-color="#b71c1c"/></radialGradient>
+  </defs></svg>`;
+
+  // --- tiny drawing kit (returns SVG strings) ---
+  const f3 = (g) => `fill="url(#${g})"`;
+  const OL = 'stroke="rgba(15,20,30,.38)" stroke-width=".6" stroke-linejoin="round"';
+  const rect3 = (x, y, w, h, g, rx = 1.2, ex = '') => `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${rx}" ${f3(g)} ${OL} ${ex}/>`;
+  const poly3 = (pts, g, ex = '') => `<polygon points="${pts}" ${f3(g)} ${OL} ${ex}/>`;
+  const circ3 = (cx, cy, r, g, ex = '') => `<circle cx="${cx}" cy="${cy}" r="${r}" ${f3(g)} ${OL} ${ex}/>`;
+  const ell3 = (cx, cy, rx, ry, g, ex = '') => `<ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" ${f3(g)} ${OL} ${ex}/>`;
+  const lit3 = (tag, attrs, g, cls = '', ex = '') => `<${tag} ${attrs} ${f3('g-off')} ${OL} ${ex}/><${tag} class="fx ${cls}" ${attrs} ${f3(g)} ${ex}/>`;
+  const shd3 = (cx, cy, rx, ry = rx * 0.26) => `<ellipse class="shd" cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}"/>`;
+  const shine3 = (d, w = 1.5, o = 0.7) => `<path d="${d}" fill="none" stroke="#fff" stroke-opacity="${o}" stroke-width="${w}" stroke-linecap="round"/>`;
+  // extruded box: front face + right side + top (depth dx, dy toward the up-right)
+  const box3 = (x, y, w, h, dx, dy, o = {}) => {
+    const { front = 'g-body', side = 'g-side', top = 'g-top', rx = 1.4 } = o;
+    return poly3(`${x + w},${y} ${x + w + dx},${y - dy} ${x + w + dx},${y + h - dy} ${x + w},${y + h}`, side)
+      + poly3(`${x},${y} ${x + dx},${y - dy} ${x + w + dx},${y - dy} ${x + w},${y}`, top)
+      + rect3(x, y, w, h, front, rx);
+  };
+  // vertical cylinder: top-ellipse y, width, body height
+  const cyl3 = (cx, top, w, h, g = 'g-cyl', tg = 'g-top') => {
+    const rx = w / 2, ry = Math.max(1.4, rx * 0.32);
+    return `<path d="M${cx - rx} ${top}v${h}a${rx} ${ry} 0 0 0 ${w} 0v${-h}Z" ${f3(g)} ${OL}/><ellipse cx="${cx}" cy="${top}" rx="${rx}" ry="${ry}" ${f3(tg)} ${OL}/>`;
+  };
+  const LAMPR = 'class="fx"';
+
+  const ICONS3D = {
+    /* ---------------- lights, switching, climate ---------------- */
+    fan: `
+      ${shd3(24, 44.6, 12)}${ell3(24, 42.4, 9, 2.8, 'g-steel')}${rect3(22.2, 33, 3.6, 9.5, 'g-steel', 1)}
+      <circle cx="24" cy="19.5" r="17" fill="url(#g-glass)" stroke="url(#g-steel)" stroke-width="2"/>
+      <circle cx="24" cy="19.5" r="12.5" fill="none" stroke="rgba(120,130,145,.35)" stroke-width=".8"/>
+      <g class="spin" style="transform-origin:24px 19.5px">
+        ${[0, 120, 240].map((a) => lit3('path', `transform="rotate(${a} 24 19.5)" d="M24 19.5C19 13.5 19.5 7 24 5.2C28.5 7 29 13.5 24 19.5Z"`, 'g-amber')).join('')}
+      </g>
+      ${circ3(24, 19.5, 3.4, 'g-sphere')}${shine3('M11.5 12a14 14 0 0 1 11-5.6')}`,
+
+    bulb: `
+      <g style="opacity:var(--bri,1)"><circle class="fx glow" cx="24" cy="18" r="16" style="fill:var(--glow,#ffc83d);filter:blur(6px);transform-origin:24px 18px"/></g>
+      <path d="M24 4.5A12.5 12.5 0 0 0 16.7 27.1V31H31.3V27.1A12.5 12.5 0 0 0 24 4.5Z" fill="url(#g-glass)" stroke="rgba(120,130,145,.85)" stroke-width="1"/>
+      <path class="fx" d="M24 4.5A12.5 12.5 0 0 0 16.7 27.1V31H31.3V27.1A12.5 12.5 0 0 0 24 4.5Z" fill="url(#g-amber)" fill-opacity=".92"/>
+      <path class="fx" d="M24 4.5A12.5 12.5 0 0 0 16.7 27.1V31H31.3V27.1A12.5 12.5 0 0 0 24 4.5Z" style="fill:var(--glow,transparent)" fill-opacity=".7"/>
+      <path d="M19.5 20l4.5 5 4.5-5M24 25v6" fill="none" stroke="#9aa3b0" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+      <path class="fx" d="M19.5 20l4.5 5 4.5-5M24 25v6" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+      ${shine3('M17.8 13a8 8 0 0 1 5-6.2', 1.8, .85)}
+      ${rect3(17, 31, 14, 3, 'g-steel', 1.2)}${rect3(17.8, 34, 12.4, 3, 'g-steel', 1.2)}${rect3(18.6, 37, 10.8, 3, 'g-steel', 1.2)}
+      <path d="M21 40h6a3 3 0 0 1-6 0Z" ${f3('g-dark')}/>`,
+
+    floodlight: `
+      <g class="fx"><path class="beam" d="M16 22H32L44 44H4Z" style="fill:#ffc83d;opacity:.34;filter:blur(2px)"/></g>
+      ${rect3(22.5, 2, 3, 6, 'g-steel', 1)}${box3(11, 7, 26, 12, 4, 3, { rx: 3 })}
+      ${lit3('rect', 'x="13.5" y="15.4" width="21" height="3.2" rx="1.6"', 'g-amber')}
+      <g class="fx"><path class="acs flick" d="M6 26l3 3M42 26l-3 3M24 30v3" style="stroke-width:1.8"/></g>`,
+
+    socket: `
+      ${shd3(24, 44.6, 14)}${box3(8, 8, 30, 32, 3, 2, { rx: 5 })}${rect3(12, 12, 22, 24, 'g-top', 3)}
+      ${rect3(22.5, 15, 3, 6.5, 'g-dark', .8)}${rect3(15.5, 26, 3, 6.5, 'g-dark', .8)}${rect3(28.5, 26, 3, 6.5, 'g-dark', .8)}
+      <g class="fx"><path class="acs flick" d="M19.6 31l2-2.5 2.5 5 2.5-5 2 2.5"/></g>
+      ${lit3('circle', 'cx="33" cy="16" r="1.8"', 'g-green')}
+      <circle class="fx okring ping" cx="33" cy="16" r="3.4" style="transform-origin:33px 16px"/>`,
+
+    switch: `
+      ${shd3(24, 44.6, 12)}${box3(10, 5, 28, 38, 3, 2, { rx: 5 })}${rect3(16, 11, 16, 26, 'g-top', 3)}
+      <rect class="swd" x="16" y="24" width="16" height="13" rx="3" ${f3('g-side')} opacity=".9"/>
+      <g class="fx"><rect x="16" y="11" width="16" height="13" rx="3" ${f3('g-side')} opacity=".9"/></g>
+      ${lit3('rect', 'x="20.5" y="14.5" width="7" height="3" rx="1.5"', 'g-amber')}`,
+
+    heater: `
+      ${shd3(24, 44.6, 18)}${rect3(5, 15, 38, 3.6, 'g-steel', 1.5)}
+      ${[0, 1, 2, 3, 4].map((i) => { const x = 7 + i * 7.6; return lit3('rect', `x="${x}" y="18.4" width="5.2" height="19" rx="2.6"`, 'g-hot') + `<rect x="${x + .8}" y="19.5" width="1.4" height="16" rx=".7" fill="#fff" opacity=".5"/>`; }).join('')}
+      ${rect3(5, 36.5, 38, 3.6, 'g-steel', 1.5)}${rect3(9, 40, 3, 3.6, 'g-dark', .8)}${rect3(36, 40, 3, 3.6, 'g-dark', .8)}
+      <g class="fx">
+        <g class="rise" style="animation-delay:0s"><path class="hts" d="M14 12c-2.2-2 2.2-4 0-6.2"/></g>
+        <g class="rise" style="animation-delay:.55s"><path class="hts" d="M24 12c-2.2-2 2.2-4 0-6.2"/></g>
+        <g class="rise" style="animation-delay:1.1s"><path class="hts" d="M34 12c-2.2-2 2.2-4 0-6.2"/></g>
+      </g>`,
+
+    ac: `
+      ${box3(4, 8, 38, 15, 4, 3, { rx: 5 })}${rect3(8, 10.5, 14, 2.2, 'g-dark', 1)}
+      ${lit3('circle', 'cx="36" cy="11.6" r="1.4"', 'g-green')}${shine3('M7.5 12a5 5 0 0 1 5-3h20', 1.4, .8)}
+      ${rect3(8, 18.5, 30, 3, 'g-dark', 1.5)}
+      <g class="flap" style="transform-origin:8px 20.5px">${rect3(8, 19.2, 30, 2.6, 'g-steel', 1.2)}</g>
+      <g class="fx">
+        <g class="fall" style="animation-delay:0s"><path class="cls" d="M14 27c-2.2 2 2.2 4 0 6.2"/></g>
+        <g class="fall" style="animation-delay:.6s"><path class="cls" d="M24 27c-2.2 2 2.2 4 0 6.2"/></g>
+        <g class="fall" style="animation-delay:1.2s"><path class="cls" d="M34 27c-2.2 2 2.2 4 0 6.2"/></g>
+        <circle class="clf tw1" cx="19" cy="40" r="1.3"/><circle class="clf tw2" cx="30" cy="42" r="1.3"/><circle class="clf tw3" cx="39" cy="38" r="1.1"/>
+      </g>`,
+
+    thermostat: `
+      ${shd3(24, 44.6, 15)}${circ3(24, 23, 19, 'g-steel')}${circ3(24, 23, 15.5, 'g-dark')}
+      <path d="M24 9.5v2.5M37.5 23H35M13 23h-2.5M13.5 12.5l1.8 1.8M34.5 12.5l-1.8 1.8" stroke="#7f8998" stroke-width="1.3" stroke-linecap="round"/>
+      <path class="acs arcp" d="M14 31.4A13 13 0 1 1 34 31.4" style="stroke-width:2.6"/>
+      ${circ3(24, 23, 4.5, 'g-sphere')}
+      <g class="fx"><circle class="okring ping" cx="24" cy="23" r="8" style="transform-origin:24px 23px;stroke:var(--c-on)"/></g>
+      ${shine3('M9 15a16 16 0 0 1 11-8.5', 1.6, .55)}`,
+
+    purifier: `
+      ${shd3(26, 44.6, 12)}${box3(13, 10, 20, 33, 5, 3, { rx: 3 })}${rect3(16, 13.5, 14, 2.4, 'g-dark', 1)}
+      <path d="M16.5 22h13M16.5 26h13M16.5 30h13M16.5 34h13" stroke="#aeb6c2" stroke-width="1.2" stroke-linecap="round"/>
+      ${lit3('circle', 'cx="29" cy="19" r="1.4"', 'g-green')}
+      <g class="fx">
+        <g class="rise" style="animation-delay:0s"><path class="cls" d="M18 9q3-3 0-6"/></g>
+        <g class="rise" style="animation-delay:.6s"><path class="cls" d="M24 9q3-3 0-6"/></g>
+        <g class="rise" style="animation-delay:1.2s"><path class="cls" d="M30 9q3-3 0-6"/></g>
+      </g>`,
+
+    geyser: `
+      ${shd3(24, 44.6, 14)}${rect3(17, 2, 3, 5, 'g-steel', 1)}${rect3(28, 2, 3, 5, 'g-steel', 1)}${cyl3(24, 7, 26, 33)}
+      ${lit3('rect', 'x="11" y="25" width="26" height="9"', 'g-hot')}
+      <rect x="14" y="8" width="3" height="31" fill="#fff" opacity=".4"/>
+      ${circ3(24, 16, 3.8, 'g-dark')}<path class="fx" d="M24 16l2.2-2.2" stroke="#ffc83d" stroke-width="1.4" stroke-linecap="round"/>
+      <g class="fx">
+        <g class="rise" style="animation-delay:.2s"><path class="hts" d="M6 26c-2-2 2-3.5 0-5.6"/></g>
+        <g class="rise" style="animation-delay:.9s"><path class="hts" d="M42 26c-2-2 2-3.5 0-5.6"/></g>
+      </g>`,
+
+    /* ---------------- kitchen & laundry ---------------- */
+    fridge: `
+      ${shd3(26, 44.6, 15)}${box3(10, 4, 26, 40, 5, 3, { rx: 2.2 })}
+      <path d="M10 18H36" stroke="rgba(20,25,35,.45)" stroke-width="1"/>
+      ${rect3(13.5, 9, 2, 6, 'g-steel', 1)}${rect3(13.5, 21, 2, 9, 'g-steel', 1)}
+      <g class="fx"><rect x="11" y="19" width="24" height="24" fill="#4fc3f7" opacity=".16"/></g>
+      <g class="snow" style="transform-origin:27px 31px"><path class="cls" d="M27 26.5v9M23.1 28.75l7.8 4.5M23.1 33.25l7.8-4.5" style="stroke-width:1.8"/></g>
+      ${lit3('circle', 'cx="31.5" cy="10.5" r="1.4"', 'g-green')}${shine3('M12 6v10', 1.2, .6)}`,
+
+    freezer: `
+      ${shd3(25, 44.6, 19)}${box3(4, 16, 34, 25, 6, 3, { rx: 2.5 })}
+      <path d="M4 23H38" stroke="rgba(20,25,35,.45)" stroke-width="1"/>${rect3(16, 18, 10, 2.4, 'g-steel', 1.2)}
+      <path d="M9 41v3M33 41v3" stroke="#59616f" stroke-width="2.4" stroke-linecap="round"/>
+      <g class="fx"><rect x="5" y="24" width="32" height="16" fill="#4fc3f7" opacity=".16"/></g>
+      <g class="snow" style="transform-origin:21px 32px"><path class="cls" d="M21 26.5v11M16 29l10 6M16 35l10-6" style="stroke-width:1.8"/></g>
+      <circle class="fx clf tw1" cx="9" cy="28" r="1.1"/><circle class="fx clf tw2" cx="33" cy="37" r="1.1"/>`,
+
+    washer: `
+      <clipPath id="tk3-wm"><circle cx="22.5" cy="28" r="9.4"/></clipPath>
+      ${shd3(24, 44.6, 17)}${box3(7, 5, 31, 38, 5, 3, { rx: 3 })}${rect3(7, 5, 31, 8, 'g-top', 3)}
+      ${circ3(12.5, 9, 1.9, 'g-sphere')}${lit3('rect', 'x="24" y="7.4" width="9" height="3.2" rx="1.6"', 'g-amber')}
+      ${circ3(22.5, 28, 11.8, 'g-steel')}${circ3(22.5, 28, 9.6, 'g-dark')}
+      <g clip-path="url(#tk3-wm)">
+        <g class="drum" style="transform-origin:22.5px 28px">${lit3('circle', 'cx="18" cy="24" r="3"', 'g-amber')}${lit3('circle', 'cx="27" cy="26" r="2.6"', 'g-amber')}${lit3('circle', 'cx="22" cy="33.5" r="3"', 'g-amber')}</g>
+        <g class="fx"><g class="wave"><path d="M6 29q3-3 6 0t6 0t6 0t6 0t6 0t6 0t6 0V40H6Z" fill="url(#g-water)" opacity=".85"/></g></g>
+      </g>${shine3('M14.5 21.5a10 10 0 0 1 8-4.6', 1.6, .55)}`,
+
+    dryer: `
+      <clipPath id="tk3-dr"><circle cx="22.5" cy="28" r="9.4"/></clipPath>
+      ${shd3(24, 44.6, 17)}${box3(7, 5, 31, 38, 5, 3, { rx: 3 })}${rect3(7, 5, 31, 8, 'g-top', 3)}
+      ${circ3(12.5, 9, 1.9, 'g-sphere')}${lit3('rect', 'x="24" y="7.4" width="9" height="3.2" rx="1.6"', 'g-hot')}
+      ${circ3(22.5, 28, 11.8, 'g-steel')}${circ3(22.5, 28, 9.6, 'g-dark')}
+      <g clip-path="url(#tk3-dr)">
+        <g class="drum" style="transform-origin:22.5px 28px">${lit3('circle', 'cx="18" cy="24.5" r="3"', 'g-hot')}${lit3('circle', 'cx="27" cy="26.5" r="2.8"', 'g-hot')}${lit3('circle', 'cx="22" cy="33" r="3"', 'g-hot')}</g>
+        <g class="fx"><g class="rise" style="animation-delay:0s"><path class="hts" d="M18 29c-1.6-1.6 1.6-2.6 0-4.2" style="stroke-width:1.4"/></g><g class="rise" style="animation-delay:.7s"><path class="hts" d="M27 31c-1.6-1.6 1.6-2.6 0-4.2" style="stroke-width:1.4"/></g></g>
+      </g>${shine3('M14.5 21.5a10 10 0 0 1 8-4.6', 1.6, .55)}`,
+
+    dishwasher: `
+      ${shd3(24, 44.6, 17)}${box3(7, 5, 31, 38, 5, 3, { rx: 3 })}${rect3(7, 5, 31, 8, 'g-top', 3)}
+      ${circ3(12.5, 9, 1.9, 'g-sphere')}${lit3('rect', 'x="24" y="7.4" width="9" height="3.2" rx="1.6"', 'g-amber')}
+      ${rect3(11, 17, 23, 21, 'g-dark', 2)}
+      <path d="M15 36v-8M20 36v-8M25 36v-8M30 36v-8" stroke="#8e98a8" stroke-width="1.3" stroke-linecap="round"/>
+      <g class="fx"><rect x="11.5" y="31" width="22" height="6.5" fill="url(#g-water)" opacity=".7"/></g>
+      <g class="arm" style="transform-origin:22.5px 24px"><path d="M14 24h17" stroke="url(#g-steel)" stroke-width="2.4" stroke-linecap="round"/></g>
+      <g class="fx"><circle class="clf fall" cx="17" cy="27" r="1.2" style="animation-delay:0s"/><circle class="clf fall" cx="22.5" cy="27" r="1.2" style="animation-delay:.4s"/><circle class="clf fall" cx="28" cy="27" r="1.2" style="animation-delay:.8s"/></g>
+      ${shine3('M13 19.5l8-1.2', 1.4, .5)}`,
+
+    kettle: `
+      ${shd3(22, 44.6, 14)}${rect3(8, 41.2, 28, 3.2, 'g-dark', 1.5)}
+      <path d="M11 41V22a3 3 0 0 1 3-3h13a3 3 0 0 1 3 3v19Z" ${f3('g-cyl')} ${OL}/>
+      ${lit3('rect', 'x="11" y="35" width="19" height="3.4" rx="1.4"', 'g-hot')}
+      <path d="M30 22l8-6 2 2.4-7 8.6Z" ${f3('g-steel')} ${OL}/>
+      <path d="M13 19l2-4h10l2 4Z" ${f3('g-steel')} ${OL}/>${circ3(20, 13.5, 1.9, 'g-dark')}
+      <path d="M11 23H7.5A1.5 1.5 0 0 0 6 24.5v9A1.5 1.5 0 0 0 7.5 35H11" fill="none" stroke="url(#g-dark)" stroke-width="3" stroke-linecap="round"/>
+      ${shine3('M13.5 24v9', 1.4, .65)}
+      <g class="fx">
+        <g class="rise" style="animation-delay:0s"><path class="steam" d="M41 14c-2-2 2-3.5 0-5.5"/></g>
+        <g class="rise" style="animation-delay:.6s"><path class="steam" d="M37 12c-2-2 2-3.5 0-5.5"/></g>
+        <circle class="fl bub" cx="18" cy="32" r="1.1" style="animation-delay:0s"/><circle class="fl bub" cx="24" cy="32" r="1.1" style="animation-delay:.5s"/>
+      </g>`,
+
+    blender: `
+      <clipPath id="tk3-bl"><path d="M14 6h20l-3 25H17Z"/></clipPath>
+      ${shd3(24, 44.6, 13)}${rect3(12.5, 3.4, 23, 3.4, 'g-steel', 1.6)}
+      <path d="M14 6h20l-3 25H17Z" fill="url(#g-glass)" stroke="rgba(120,130,145,.85)" stroke-width="1" stroke-linejoin="round"/>
+      <g clip-path="url(#tk3-bl)">
+        ${lit3('rect', 'x="12" y="17" width="26" height="16"', 'g-amber', '', 'opacity=".6"')}
+        <g class="fx"><circle class="fl bub" cx="20" cy="27" r="1.2" style="animation-delay:0s"/><circle class="fl bub" cx="27" cy="28" r="1.4" style="animation-delay:.4s"/><circle class="fl bub" cx="24" cy="26" r="1" style="animation-delay:.8s"/></g>
+        <g class="blend" style="transform-origin:24px 29px"><path d="M17.5 29h13" stroke="url(#g-steel)" stroke-width="2.4" stroke-linecap="round"/></g>
+      </g>${shine3('M16 9l2 15', 1.4, .7)}
+      ${box3(13, 31, 22, 12, 3, 2, { front: 'g-dark', side: 'g-ds', top: 'g-steel', rx: 3.5 })}${circ3(24, 37, 2.2, 'g-steel')}
+      <g class="fx"><path class="acs flick" d="M8.5 13v7M39.5 13v7" style="stroke-width:1.6"/></g>`,
+
+    sewing: `
+      ${shd3(24, 44.6, 19)}
+      <path d="M7 13a4.5 4.5 0 0 1 4.5-4.5H36.5A4.5 4.5 0 0 1 41 13V41H31V21H11.5A4.5 4.5 0 0 1 7 16.5Z" ${f3('g-body')} ${OL}/>
+      <path d="M31 21V41H41V13a4.5 4.5 0 0 0-4.5-4.5" fill="none" stroke="rgba(110,120,140,.35)" stroke-width="1.2"/>
+      ${rect3(4, 41, 40, 3.5, 'g-steel', 1.75)}${circ3(17, 14.5, 2.6, 'g-sphere')}
+      ${lit3('rect', 'x="9" y="19.4" width="6" height="1.8" rx=".9"', 'g-amber')}
+      <path d="M17.4 17.2Q14 19 12.1 26" fill="none" stroke="#c0495a" stroke-width="1.1"/>
+      <g class="needle"><rect x="11" y="21" width="2.2" height="8" rx="1" ${f3('g-steel')} ${OL}/><path d="M12.1 29v5" stroke="#9aa3b0" stroke-width="1.5" stroke-linecap="round"/></g>
+      <path d="M9 37.3h6" stroke="#6b7482" stroke-width="2.2" stroke-linecap="round"/>
+      <path class="acs dash" d="M5 39.6h24" style="stroke-dasharray:3 3;stroke-width:1.4"/>
+      <g class="spin" style="transform-origin:36px 14.5px">${circ3(36, 14.5, 3.8, 'g-steel')}<path d="M36 11.4v6.2" stroke="#59616f" stroke-width="1.4" stroke-linecap="round"/></g>`,
+
+    pump: `
+      ${shd3(22, 44.6, 20)}${rect3(3, 37, 34, 3.6, 'g-dark', 1.8)}
+      <rect x="4" y="15" width="17" height="18" rx="4" ${f3('g-cylh')} ${OL}/>
+      <path d="M9.5 19.5v9M13.5 19.5v9M17.5 19.5v9" stroke="#8a93a1" stroke-width="1.2" stroke-linecap="round"/>
+      ${rect3(9, 33, 3, 4, 'g-dark', .8)}${rect3(26, 34, 8, 3, 'g-dark', .8)}
+      ${rect3(27.4, 6, 5, 8, 'g-steel', 1)}${rect3(39.5, 21, 7, 6, 'g-steel', 1)}
+      ${circ3(30, 24, 10.6, 'g-steel')}${circ3(30, 24, 8.6, 'g-dark')}
+      <circle class="fx" cx="30" cy="24" r="8" fill="url(#g-water)" opacity=".55"/>
+      <g class="spin" style="transform-origin:30px 24px">
+        ${lit3('rect', 'x="29" y="16" width="2" height="8" rx="1"', 'g-amber')}${lit3('rect', 'transform="rotate(90 30 24)" x="29" y="16" width="2" height="8" rx="1"', 'g-amber')}
+        ${lit3('rect', 'transform="rotate(180 30 24)" x="29" y="16" width="2" height="8" rx="1"', 'g-amber')}${lit3('rect', 'transform="rotate(270 30 24)" x="29" y="16" width="2" height="8" rx="1"', 'g-amber')}
+      </g>${circ3(30, 24, 2.2, 'g-sphere')}
+      <g class="fx"><circle class="clf drop" cx="46" cy="24" r="1.4" style="animation-delay:0s"/><circle class="clf drop" cx="46" cy="24" r="1.4" style="animation-delay:.4s"/></g>`,
+
+    tv: `
+      <clipPath id="tk3-tv"><rect x="6" y="9" width="36" height="22.5" rx="1.5"/></clipPath>
+      <g class="fx"><rect x="3" y="6" width="42" height="29" rx="5" style="fill:#4fc3f7;opacity:.28;filter:blur(7px)"/></g>
+      ${shd3(24, 44.6, 14)}${poly3('16,41 32,41 34,43.8 14,43.8', 'g-steel')}${rect3(21.5, 33, 5, 8.4, 'g-steel', 1)}
+      ${rect3(3.5, 6.5, 41, 28, 'g-dark', 3)}${rect3(6, 9, 36, 22.5, 'g-ds', 1.5)}
+      <g class="fx" clip-path="url(#tk3-tv)" style="filter:blur(3px)">
+        <rect x="5" y="8" width="38" height="25" style="fill:#16213e"/>
+        <circle class="b1" cx="15" cy="17" r="9" style="fill:#4fc3f7"/><circle class="b2" cx="32" cy="24" r="10" style="fill:#ff7043"/><circle class="b3" cx="26" cy="14" r="7" style="fill:#ab47bc"/>
+      </g>
+      <path d="M6 9h36v7L6 23Z" fill="url(#g-gloss)" opacity=".2"/>`,
+
+    speaker: `
+      ${shd3(26, 44.6, 13)}${box3(13, 5, 20, 38, 5, 3, { front: 'g-dark', side: 'g-ds', top: 'g-steel', rx: 3 })}
+      ${circ3(23, 13, 3.6, 'g-steel')}${circ3(23, 13, 2, 'g-ds')}
+      ${circ3(23, 30, 8.6, 'g-steel')}
+      <g class="pulse" style="transform-origin:23px 30px">${circ3(23, 30, 6.6, 'g-ds')}${lit3('circle', 'cx="23" cy="30" r="3.4"', 'g-amber')}</g>
+      <g class="fx">
+        <path class="acs wv" d="M40 20q3 4 0 8" style="animation-delay:0s"/><path class="acs wv" d="M44 16q5 8 0 16" style="animation-delay:.3s"/>
+        <path class="acs wv" d="M6 20q-3 4 0 8" style="animation-delay:0s"/><path class="acs wv" d="M2 16q-5 8 0 16" style="animation-delay:.3s"/>
+      </g>`,
+
+    /* ---------------- power & energy ---------------- */
+    solar: `
+      <clipPath id="tk3-pv"><polygon points="7,34.4 12.2,19.6 41.6,19.6 36.4,34.4"/></clipPath>
+      ${shd3(24, 44.6, 17)}
+      <path d="M17 36l-3 8.2M31 36l3 8.2" stroke="url(#g-steel)" stroke-width="2.2" stroke-linecap="round"/>
+      <g class="fx"><g class="spin slow" style="transform-origin:37px 8.5px"><path class="acs" d="M37 -.5v3M37 14.5v3M28.5 8.5h3M42.5 8.5h3M31 2.5l2 2M41 12.5l2 2M43 2.5l-2 2M31 14.5l2-2"/></g></g>
+      ${circ3(37, 8.5, 4.6, 'g-amber')}
+      ${poly3('5,36 11,18 43,18 37,36', 'g-steel')}${poly3('7,34.4 12.2,19.6 41.6,19.6 36.4,34.4', 'g-pv')}
+      <path d="M9.6 27h28.4M19.9 19.6l-2.7 14.8M30.4 19.6l2.7 14.8" stroke="#8fb0ff" stroke-opacity=".55" stroke-width=".7"/>
+      <g clip-path="url(#tk3-pv)"><g class="fx"><rect class="shim" x="-14" y="18" width="7" height="18" style="fill:#fff;opacity:.45;transform:skewX(-20deg)"/></g></g>
+      <path d="M12.2 19.6h29.4L28 27z" fill="url(#g-gloss)" opacity=".22"/>`,
+
+    battery: `
+      ${shd3(24, 44.6, 18)}${box3(4, 14, 32, 20, 5, 3, { front: 'g-dark', side: 'g-ds', top: 'g-steel', rx: 3 })}${rect3(41, 20, 3.5, 8, 'g-steel', 1.2)}
+      <rect class="lvl" x="7" y="17.5" width="26" height="13" rx="2" style="transform-origin:7px 24px;transform:scaleX(var(--lvl,1));fill:var(--lvlc,#66bb6a);transition:transform .6s,fill .4s"/>
+      <rect x="7" y="17.5" width="26" height="5" rx="2" fill="url(#g-gloss)" opacity=".4" style="transform-origin:7px 24px;transform:scaleX(var(--lvl,1));transition:transform .6s"/>
+      <path d="M15.5 17.5v13M24 17.5v13" stroke="#15181f" stroke-width="1"/>
+      <path class="chgfx" d="M21.5 15.5L15 25h5l-1 7.5 7-10.5h-5.2Z" style="fill:#fff;stroke:rgba(0,0,0,.45);stroke-width:.8;stroke-linejoin:round"/>`,
+
+    inverter: `
+      <clipPath id="tk3-inv"><rect x="9" y="14" width="24" height="12" rx="2"/></clipPath>
+      ${shd3(24, 44.6, 18)}${box3(5, 10, 32, 28, 5, 3, { rx: 3 })}${rect3(9, 14, 24, 12, 'g-dark', 2)}
+      <g clip-path="url(#tk3-inv)"><g class="wave"><path class="acs" d="M-3 20q3-6 6 0t6 0t6 0t6 0t6 0t6 0t6 0t6 0t6 0t6 0" style="stroke-width:1.6"/></g></g>
+      <path d="M10 31h13M10 33.6h13" stroke="#aeb6c2" stroke-width="1.2" stroke-linecap="round"/>
+      ${lit3('circle', 'cx="27" cy="31.6" r="1.6"', 'g-green')}${circ3(31, 31.6, 1.6, 'g-steel')}
+      ${shine3('M9.5 16.5l10-1.6', 1.2, .4)}`,
+
+    fence: `
+      ${shd3(22, 44.6, 15)}${box3(8, 9, 28, 30, 4, 3, { rx: 3 })}
+      <g class="bolt">${lit3('path', 'd="M24.5 13L14.5 26.5h6.8l-2 9 10.2-14h-6.8Z"', 'g-amber')}</g>
+      ${lit3('circle', 'cx="12.5" cy="13.2" r="1.6"', 'g-green')}${circ3(14, 37.5, 1.5, 'g-steel')}${circ3(30, 37.5, 1.5, 'g-steel')}
+      <circle class="fx acs ping" cx="22" cy="24" r="12" style="transform-origin:22px 24px"/>
+      <path class="acs" d="M3 45h42" style="stroke-dasharray:2 3;stroke-width:1.4;stroke-opacity:.7"/>`,
+
+    ev: `
+      ${shd3(24, 40.6, 19, 2.6)}
+      <path d="M4 33v-5a3 3 0 0 1 2.4-2.9L11 24l5-7.2A4 4 0 0 1 19.3 15H30a4 4 0 0 1 3.1 1.5L38 24l3.6.8A3 3 0 0 1 44 27.7V33a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1Z" ${f3('g-body')} ${OL}/>
+      <path d="M17 24l3.4-5.5H29a2 2 0 0 1 1.6.8L34.5 24Z" ${f3('g-dark')}/>${shine3('M8 27.5l6-1.6', 1.2, .7)}
+      ${circ3(14, 34, 4.8, 'g-ds')}${circ3(14, 34, 2, 'g-steel')}${circ3(34, 34, 4.8, 'g-ds')}${circ3(34, 34, 2, 'g-steel')}
+      ${lit3('rect', 'x="41" y="26.4" width="3" height="2.4" rx="1"', 'g-amber')}
+      <g class="bolt">${lit3('path', 'd="M25 2.5l-5 8h4l-1 6 6-9h-4.2Z"', 'g-amber')}</g>
+      <circle class="fx acs ping" cx="24" cy="10" r="7" style="transform-origin:24px 10px"/>`,
+
+    /* ---------------- sensors & security ---------------- */
+    door: `
+      ${shd3(24, 44.6, 15)}${rect3(8, 3.5, 32, 41, 'g-steel', 2)}${rect3(10.5, 6, 27, 36, 'g-ds', 1)}
+      <rect class="fx" x="10.5" y="6" width="27" height="36" ${f3('g-amber')} opacity=".6"/>
+      <g class="leaf" style="transform-origin:10.5px 24px">${rect3(10.5, 6, 27, 36, 'g-wood', 1)}
+        <rect x="14" y="10" width="8.5" height="13" fill="rgba(0,0,0,.14)" stroke="rgba(255,255,255,.3)" stroke-width=".7"/><rect x="25" y="10" width="8.5" height="13" fill="rgba(0,0,0,.14)" stroke="rgba(255,255,255,.3)" stroke-width=".7"/>
+        <rect x="14" y="26" width="8.5" height="12" fill="rgba(0,0,0,.14)" stroke="rgba(255,255,255,.3)" stroke-width=".7"/><rect x="25" y="26" width="8.5" height="12" fill="rgba(0,0,0,.14)" stroke="rgba(255,255,255,.3)" stroke-width=".7"/>
+        ${circ3(34.6, 25, 1.9, 'g-amber')}</g>`,
+
+    window: `
+      ${shd3(24, 44.6, 14)}${rect3(6, 6, 36, 36, 'g-body', 2)}${rect3(9, 9, 30, 30, 'g-water', 1, 'opacity=".35"')}
+      <rect class="gapc" x="9" y="9" width="30" height="30"/>
+      <rect x="9" y="9" width="14.5" height="30" fill="url(#g-glass)" stroke="url(#g-steel)" stroke-width="1.6"/>
+      <g class="leafr" style="transform-origin:39px 24px"><rect x="24.5" y="9" width="14.5" height="30" fill="url(#g-glass)" stroke="url(#g-steel)" stroke-width="1.6"/>${rect3(26.5, 22, 1.8, 5, 'g-steel', .9)}</g>
+      ${shine3('M12 13l7-3', 1.4, .8)}`,
+
+    garage: `
+      <clipPath id="tk3-gar"><rect x="9" y="20" width="30" height="24"/></clipPath>
+      ${shd3(24, 44.6, 20)}${poly3('2,17.5 24,5 46,17.5', 'g-side')}${rect3(5, 16, 38, 28.4, 'g-body', 1)}${rect3(9, 20, 30, 24, 'g-ds', 1)}
+      <g clip-path="url(#tk3-gar)"><g class="gdoor">
+        ${rect3(9, 20, 30, 6.2, 'g-steel', .6)}${rect3(9, 26.2, 30, 6.2, 'g-steel', .6)}${rect3(9, 32.4, 30, 6.2, 'g-steel', .6)}${rect3(9, 38.6, 30, 6.2, 'g-steel', .6)}
+      </g></g>`,
+
+    blind: `
+      ${shd3(24, 44.6, 14)}${rect3(6, 9, 36, 34, 'g-water', 1, 'opacity=".35"')}${rect3(6, 3.5, 36, 5.5, 'g-steel', 2)}
+      <g class="slats" style="transform-origin:24px 9px">
+        ${[0, 1, 2, 3, 4].map((i) => rect3(7.5, 9 + i * 5.4, 33, 4.6, 'g-body', 1)).join('')}
+      </g>
+      <path d="M40 9v12" stroke="#8a93a1" stroke-width="1" />${circ3(40, 22, 1.3, 'g-sphere')}`,
+
+    lock: `
+      ${shd3(24, 44.6, 12)}
+      <path class="shackle" d="M16.5 22v-6.5a7.5 7.5 0 0 1 15 0V22" fill="none" stroke="url(#g-steel)" stroke-width="3.8" stroke-linecap="round" style="transform-origin:31.5px 22px"/>
+      ${rect3(10, 22, 28, 21, 'g-dark', 4.5)}
+      <g class="fx"><rect x="10" y="22" width="28" height="21" rx="4.5" ${f3('g-amber')} opacity=".95"/></g>
+      ${circ3(24, 30.5, 3, 'g-body')}${rect3(23, 31.5, 2, 6, 'g-body', .8)}${shine3('M13 25.5h9', 1.4, .6)}`,
+
+    motion: `
+      ${shd3(15, 44, 10)}${ell3(15, 40, 9.5, 3, 'g-steel')}${circ3(15, 30, 9.6, 'g-sphere')}
+      ${circ3(15, 30, 4, 'g-ds')}${lit3('circle', 'cx="15" cy="30" r="2"', 'g-amber')}${shine3('M9 25a8 8 0 0 1 5-3.6', 1.5, .8)}
+      <g class="fx">
+        <path class="acs wv" d="M27 23q5 7 0 14" style="animation-delay:0s"/>
+        <path class="acs wv" d="M32 18q9 12 0 24" style="animation-delay:.3s"/>
+        <path class="acs wv" d="M37 13q13 17 0 34" style="animation-delay:.6s"/>
+      </g>`,
+
+    presence: `
+      ${shd3(24, 44.6, 12)}
+      ${lit3('path', 'd="M11.5 41a12.5 12.5 0 0 1 25 0Z"', 'g-amber')}${lit3('circle', 'cx="24" cy="15" r="6.2"', 'g-amber')}
+      ${shine3('M15 33a9 9 0 0 1 5-5', 1.6, .55)}
+      <g class="fx">
+        <circle class="acs ping" cx="24" cy="27" r="14" style="transform-origin:24px 27px"/>
+        <circle class="acs ping" cx="24" cy="27" r="14" style="transform-origin:24px 27px;animation-delay:.8s"/>
+      </g>`,
+
+    smoke: `
+      ${shd3(24, 40, 17, 3)}${cyl3(24, 18, 34, 12, 'g-cyl', 'g-top')}${ell3(24, 18, 12.5, 4, 'g-ds')}
+      <g fill="#6c7584"><circle cx="19" cy="18" r=".8"/><circle cx="24" cy="18.6" r=".8"/><circle cx="29" cy="18" r=".8"/><circle cx="21.5" cy="16.8" r=".7"/><circle cx="26.5" cy="16.8" r=".7"/></g>
+      ${lit3('circle', 'cx="34" cy="26.5" r="1.5"', 'g-red', 'blinkled')}${shine3('M10 27v-6', 1.4, .6)}
+      <g class="fx"><circle class="acs ping" cx="24" cy="22" r="13" style="transform-origin:24px 22px"/><g class="rise"><path class="acs" d="M24 11q4-3 0-6"/></g></g>`,
+
+    leak: `
+      ${shd3(24, 44.4, 13, 2.6)}
+      <g class="fx"><ellipse cx="24" cy="41.5" rx="15" ry="3.4" fill="url(#g-water)" opacity=".7"/></g>
+      <g class="dripf">
+        <path d="M24 4s-9 11-9 17.5a9 9 0 0 0 18 0C33 15 24 4 24 4Z" ${f3('g-off')} ${OL}/>
+        <path class="fx" d="M24 4s-9 11-9 17.5a9 9 0 0 0 18 0C33 15 24 4 24 4Z" fill="url(#g-water)" stroke="rgba(2,100,160,.7)" stroke-width=".8"/>
+        ${shine3('M19.5 20.5a5 5 0 0 0 3 4.8', 1.7, .8)}
+      </g>
+      <g class="fx"><ellipse class="acs ping" cx="24" cy="41.5" rx="10" ry="2.6" style="transform-origin:24px 41.5px"/></g>`,
+
+    camera: `
+      ${shd3(20, 44.6, 14)}${rect3(7, 34, 12, 3.2, 'g-steel', 1.2)}<path d="M15 23.5v7l-3 3.5" fill="none" stroke="url(#g-steel)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+      <rect x="4" y="9" width="29" height="15.5" rx="6" ${f3('g-cylh')} ${OL}/>${rect3(4, 8, 30, 4.6, 'g-steel', 2.3)}
+      ${ell3(33, 16.8, 4.2, 7.6, 'g-ds')}${lit3('ellipse', 'cx="33" cy="16.8" rx="2.1" ry="3.7"', 'g-cool')}
+      <circle class="rec" cx="10" cy="18" r="1.7"/>${shine3('M8 14.5h16', 1.3, .6)}
+      <g class="fx"><path class="scan cmcone" d="M37 17L47 9V26Z" style="fill:#4fc3f7;opacity:.35;transform-origin:37px 17px"/></g>`,
+
+    doorbell: `
+      ${shd3(24, 44.6, 11)}${box3(13, 4, 20, 38, 4, 3, { front: 'g-body', rx: 4 })}
+      ${circ3(23, 13, 3.6, 'g-steel')}${lit3('circle', 'cx="23" cy="13" r="2.2"', 'g-cool')}
+      ${circ3(23, 30, 7.4, 'g-steel')}${circ3(23, 30, 6, 'g-dark')}<g class="bell" style="transform-origin:23px 30px">${lit3('circle', 'cx="23" cy="30" r="4.6"', 'g-amber')}</g>
+      <g class="fx"><circle class="acs ping" cx="23" cy="30" r="9" style="transform-origin:23px 30px"/><path class="acs flick" d="M6 25q-2.5 5 0 10M42 25q2.5 5 0 10"/></g>
+      ${shine3('M15.5 8v26', 1.2, .55)}`,
+
+    alarm: `
+      ${shd3(24, 44.6, 15)}${rect3(7, 35, 34, 5.5, 'g-steel', 2)}
+      <path d="M11 35a13 13 0 0 1 26 0Z" ${f3('g-off')} ${OL}/>
+      <path class="fx" d="M11 35a13 13 0 0 1 26 0Z" ${f3('g-red')}/>
+      ${shine3('M15 31a9 9 0 0 1 6-7', 1.8, .8)}
+      <g class="fx flick"><path class="acs" d="M24 18v-6M11.5 21l-4-4M36.5 21l4-4M6 29H2.5M45.5 29H42" style="stroke-width:2.2"/></g>`,
+
+    router: `
+      ${shd3(24, 44.6, 17)}${box3(5, 29, 34, 10, 5, 3, { rx: 2.5 })}
+      <rect x="10" y="17" width="3" height="12" rx="1.4" ${f3('g-dark')} ${OL}/><rect x="31" y="17" width="3" height="12" rx="1.4" ${f3('g-dark')} ${OL}/>
+      ${lit3('circle', 'cx="12" cy="34" r="1.5"', 'g-green')}${lit3('circle', 'cx="18" cy="34" r="1.5"', 'g-green', 'l2')}${lit3('circle', 'cx="24" cy="34" r="1.5"', 'g-green', 'l3')}
+      ${shine3('M8 31h26', 1.2, .6)}
+      <g class="fx">
+        <path class="acs wf" d="M18.5 19.5a8 8 0 0 1 11 0" style="animation-delay:0s"/>
+        <path class="acs wf" d="M14.5 15.5a13.5 13.5 0 0 1 19 0" style="animation-delay:.25s"/>
+        <path class="acs wf" d="M10.5 11.5a19 19 0 0 1 27 0" style="animation-delay:.5s"/>
+      </g>`,
+
+    vacuum: `
+      ${shd3(24, 41, 16, 3.4)}
+      <g class="vac" style="transform-origin:24px 22px">
+        ${circ3(24, 22, 16, 'g-body')}<circle cx="24" cy="22" r="15.4" fill="none" stroke="#3a4150" stroke-width="2" stroke-dasharray="38 59" transform="rotate(200 24 22)"/>
+        ${circ3(24, 22, 11.6, 'g-top')}${circ3(24, 17, 3.6, 'g-dark')}${lit3('circle', 'cx="24" cy="27.5" r="2.4"', 'g-green')}
+        <g class="spin" style="transform-origin:34px 31px"><path d="M34 27.5v7M30.5 31h7" stroke="#3a4150" stroke-width="1.8" stroke-linecap="round"/></g>
+        ${shine3('M12 17a13 13 0 0 1 9-7', 1.6, .8)}
+      </g>
+      <g class="fx"><path class="acs dash" d="M3 45h42" style="stroke-dasharray:3 3;stroke-width:1.6"/></g>`,
+
+    /* ---------------- environment ---------------- */
+    weather: `
+      <mask id="tk3-wmask" maskUnits="userSpaceOnUse" x="0" y="0" width="48" height="48">
+        <rect width="48" height="48" fill="#fff"/><path class="mk" d="${CLOUD}" style="fill:#000;stroke:#000;stroke-width:5"/>
+      </mask>
+      <g mask="url(#tk3-wmask)"><g class="wl sunl" style="transform-origin:24px 24px">
+        <g class="spin slow rays" style="transform-origin:24px 24px"><path d="M24 4.5v4M24 39.5v4M4.5 24h4M39.5 24h4M10.2 10.2l2.8 2.8M35 35l2.8 2.8M37.8 10.2L35 13M13 35l-2.8 2.8" stroke="#ffb020" stroke-width="2.2" stroke-linecap="round"/></g>
+        <circle cx="24" cy="24" r="9" fill="#ffc83d" opacity=".35" style="filter:blur(4px)"/>${circ3(24, 24, 8.6, 'g-amber')}${shine3('M18.5 20a6.5 6.5 0 0 1 4-3', 1.6, .8)}
+      </g></g>
+      <g class="wl moonl"><path d="M31 9a14 14 0 1 0 9 24A11 11 0 0 1 31 9Z" ${f3('g-body')} ${OL}/><circle class="fl tw1" cx="38" cy="10" r="1.3"/><circle class="fl tw2" cx="42" cy="18" r="1"/></g>
+      <g class="wl cloudl"><path d="${CLOUD}" ${f3('g-cloud')} stroke="rgba(120,135,160,.55)" stroke-width=".8"/>${shine3('M15.5 26.5a4.6 4.6 0 0 1 1.5-7', 1.6, .85)}</g>
+      <g class="wl rainl"><path class="rn" d="M18 34l-1.6 5" stroke="#4fc3f7" stroke-width="2.2" stroke-linecap="round" style="animation-delay:0s"/><path class="rn" d="M25 34l-1.6 5" stroke="#4fc3f7" stroke-width="2.2" stroke-linecap="round" style="animation-delay:.35s"/><path class="rn" d="M32 34l-1.6 5" stroke="#4fc3f7" stroke-width="2.2" stroke-linecap="round" style="animation-delay:.7s"/></g>
+      <g class="wl snowl"><circle class="sn" cx="18" cy="36" r="1.6" ${f3('g-sphere')} style="animation-delay:0s"/><circle class="sn" cx="25" cy="38" r="1.6" ${f3('g-sphere')} style="animation-delay:.6s"/><circle class="sn" cx="32" cy="36" r="1.6" ${f3('g-sphere')} style="animation-delay:1.2s"/></g>
+      <g class="wl boltl"><path class="zapw" d="M27 30l-5 8h4l-2 7 7-10h-4.5Z" ${f3('g-amber')} ${OL}/></g>
+      <g class="wl fogl"><path class="fogln" d="M8 36h30M12 41h28M8 46h22" stroke="#9aa8bc" stroke-width="2.4" stroke-linecap="round"/></g>
+      <g class="wl windl"><path class="windln" d="M6 37h22a3.5 3.5 0 1 0-3.5-3.5M6 43h30a3.5 3.5 0 1 1-3.5 3.5" fill="none" stroke="#9aa8bc" stroke-width="2.2" stroke-linecap="round"/></g>`,
+
+    temperature: `
+      ${shd3(24, 44.6, 9)}
+      <path d="M20 10a4 4 0 0 1 8 0V29.07A8 8 0 1 1 20 29.07Z" fill="url(#g-glass)" stroke="rgba(120,130,145,.9)" stroke-width="1.2"/>
+      <circle cx="24" cy="36" r="5.2" style="fill:var(--lvlc,#ef5350);transition:fill .4s"/>
+      <rect x="22.4" y="12" width="3.2" height="24" rx="1.6" style="transform-origin:24px 36px;transform:scaleY(var(--lvl,.5));fill:var(--lvlc,#ef5350);transition:transform .6s,fill .4s"/>
+      <circle cx="22.4" cy="34.6" r="1.4" fill="#fff" opacity=".7"/>${shine3('M21.4 11v14', 1.2, .8)}
+      <path d="M32 10h4M32 16h3M32 22h4M32 28h3" stroke="#8a93a1" stroke-width="1.4" stroke-linecap="round"/>`,
+
+    humidity: `
+      <clipPath id="tk3-hum"><path d="${DROPLET}"/></clipPath>
+      ${shd3(24, 44.6, 11)}
+      <path d="${DROPLET}" fill="url(#g-glass)" stroke="rgba(120,130,145,.9)" stroke-width="1.2"/>
+      <g clip-path="url(#tk3-hum)"><rect x="8" y="4" width="32" height="40" fill="url(#g-water)" style="transform-origin:24px 44px;transform:scaleY(var(--lvl,.5));transition:transform .6s"/></g>
+      ${shine3('M16.5 28.5a8 8 0 0 0 4.5 7', 1.8, .85)}`,
+
+    gauge: `
+      ${shd3(24, 44.6, 15)}${circ3(24, 25, 19, 'g-steel')}${circ3(24, 25, 15.5, 'g-dark')}
+      <path class="acs" d="M12.5 33a12.5 12.5 0 0 1 23 0" style="stroke-width:2.4"/>
+      <path d="M24 12.5v3M12 19l2.2 2.2M36 19l-2.2 2.2" stroke="#8a93a1" stroke-width="1.4" stroke-linecap="round"/>
+      <g class="ndl" style="transform-origin:24px 29px;transform:rotate(calc(var(--lvl,.5) * 180deg - 90deg));transition:transform .7s"><path d="M24 29L24 15.5" stroke="#ef5350" stroke-width="2" stroke-linecap="round"/></g>
+      ${circ3(24, 29, 3, 'g-sphere')}${shine3('M9.5 17a16 16 0 0 1 11-8', 1.6, .55)}`,
+  };
+
   /* ------------------------------------------------------------- detection */
   // Name keywords. First match wins, so order matters ("TV Socket" is a socket, "Water heater" a geyser).
   const KEYWORDS = [
@@ -632,6 +1092,11 @@
   svg .rec{fill:var(--c-off);fill-opacity:.55} .on svg .rec{fill:#ef5350;fill-opacity:1;filter:drop-shadow(0 0 2px #ef5350);animation:tk-flick 1.4s steps(2) infinite}
   svg .arcp{transition:stroke .4s}
 
+  /* ---- 3D style ---- */
+  svg .shd{fill:#000;opacity:.3;filter:blur(1.2px)}
+  svg .swd{transition:opacity .3s} .on svg .swd{opacity:0}
+  .s3d .ico svg{filter:drop-shadow(0 1px 1.2px rgba(0,0,0,.28))}
+
   /* ---- weather layers ---- */
   svg .wl{opacity:0;transition:opacity .35s,transform .35s}
   svg .sunl{transform-origin:24px 24px}
@@ -758,7 +1223,8 @@
       this.domain = (cfg.entity || '').split('.')[0];
       this.toggleable = cfg.show_toggle !== false && TOGGLE_DOMAINS.has(this.domain);
       const el = (this.el = document.createElement('div'));
-      el.className = `row ${layout}`;
+      this.style3d = cfg.style === '3d';
+      el.className = `row ${layout}${this.style3d ? ' s3d' : ''}`;
       if (cfg.accent) el.style.setProperty('--tk-accent', cfg.accent);
       if (cfg.icon_size) el.style.setProperty('--tk-size', `${parseInt(cfg.icon_size, 10)}px`);
       el.innerHTML = `<div class="ico"></div><div class="txt"><div class="nm"></div><div class="sub"></div></div><div class="ctl"></div>`;
@@ -823,7 +1289,8 @@
       if (this.type) this.el.classList.remove(`t-${this.type}`);
       this.type = type;
       this.el.classList.add(`t-${type}`);
-      this.icoEl.innerHTML = `<svg viewBox="0 0 48 48" aria-hidden="true">${ICONS[type] || ICONS.switch}</svg>`;
+      const src = (this.style3d && ICONS3D[type]) || ICONS[type] || ICONS.switch;
+      this.icoEl.innerHTML = `<svg viewBox="0 0 48 48" aria-hidden="true">${src}</svg>`;
     }
     moreInfo() { this.fire('hass-more-info', { entityId: this.cfg.entity }); }
     toggle() {
@@ -909,15 +1376,15 @@
   const pickEntities = (hass, n) => Object.keys(hass?.states || {}).filter((e) => LIKELY.test(e)).slice(0, n);
 
   /* ------------------------------------------------------- single-entity card */
-  class HaCustomIconsCard extends HTMLElement {
-    static getConfigElement() { return document.createElement('ha-custom-icons-card-editor'); }
+  class LiviconCard extends HTMLElement {
+    static getConfigElement() { return document.createElement('livicon-card-editor'); }
     static getStubConfig(hass) { return { entity: pickEntities(hass, 1)[0] || '', layout: 'row' }; }
     setConfig(config) {
-      if (!config || !config.entity) throw new Error('ha-custom-icons-card: `entity` is required');
+      if (!config || !config.entity) throw new Error('livicon-card: `entity` is required');
       this._config = config;
       if (!this.shadowRoot) this.attachShadow({ mode: 'open' });
       const layout = ['row', 'tile', 'icon'].includes(config.layout) ? config.layout : 'row';
-      this.shadowRoot.innerHTML = `<style>${STYLE}</style><ha-card></ha-card>`;
+      this.shadowRoot.innerHTML = `<style>${STYLE}</style>${DEFS3D}<ha-card></ha-card>`;
       this._row = new Row(cleanEntity(config), layout, fireFrom(this));
       this.shadowRoot.querySelector('ha-card').appendChild(this._row.el);
       if (this._hass) this._row.update(this._hass);
@@ -927,15 +1394,15 @@
   }
 
   /* ------------------------------------------------------------- group card */
-  class HaCustomIconsGroupCard extends HTMLElement {
-    static getConfigElement() { return document.createElement('ha-custom-icons-group-card-editor'); }
+  class LiviconGroupCard extends HTMLElement {
+    static getConfigElement() { return document.createElement('livicon-group-card-editor'); }
     static getStubConfig(hass) { return { title: 'Devices', entities: pickEntities(hass, 3) }; }
     setConfig(config) {
-      if (!config || !Array.isArray(config.entities)) throw new Error('ha-custom-icons-group-card: `entities` list is required');
+      if (!config || !Array.isArray(config.entities)) throw new Error('livicon-group-card: `entities` list is required');
       this._config = config;
       if (!this.shadowRoot) this.attachShadow({ mode: 'open' });
       const showMaster = config.master_toggle !== false && !!config.title;
-      this.shadowRoot.innerHTML = `<style>${STYLE}</style><ha-card>
+      this.shadowRoot.innerHTML = `<style>${STYLE}</style>${DEFS3D}<ha-card>
         ${config.title ? `<div class="hd"><span class="title">${esc(config.title)}</span>${showMaster ? '<button class="sw master" role="switch" aria-checked="false" aria-label="toggle all"><span></span></button>' : ''}</div>` : ''}
         <div class="list"></div></ha-card>`;
       const fire = fireFrom(this);
@@ -943,6 +1410,7 @@
         const c = cleanEntity(e);
         if (config.accent && !c.accent) c.accent = config.accent;
         if (config.icon_size && !c.icon_size) c.icon_size = config.icon_size;
+        if (config.style && !c.style) c.style = config.style;
         if (config.tap_action && !c.tap_action) c.tap_action = config.tap_action;   // group-wide defaults,
         if (config.hold_action && !c.hold_action) c.hold_action = config.hold_action; // per-entity values win
         return new Row(c, 'row', fire);
@@ -982,8 +1450,9 @@
     entity: 'Entity', name: 'Name (optional)', icon: 'Icon type', layout: 'Layout',
     accent: 'Accent colour (optional, e.g. #ffb020)', title: 'Title', master_toggle: 'Master toggle',
     icon_size: 'Icon size in px (optional)', charging_entity: 'Charging entity (battery icons)',
-    tap_action: 'Tap action', hold_action: 'Hold action', add: 'Add entity',
+    tap_action: 'Tap action', hold_action: 'Hold action', add: 'Add entity', style: 'Icon style',
   };
+  const STYLE_OPTIONS = [{ value: 'flat', label: 'Flat (default)' }, { value: '3d', label: '3D (realistic)' }];
   const computeLabel = (s) => LABELS[s.name] || s.name;
   const actionFields = (tapDefault) => [
     { name: 'tap_action', selector: { ui_action: { default_action: tapDefault } } },
@@ -1023,7 +1492,7 @@
     }
   }
 
-  class HaCustomIconsCardEditor extends EditorBase {
+  class LiviconCardEditor extends EditorBase {
     _render() {
       this._forms = [];
       this.innerHTML = '';
@@ -1034,17 +1503,18 @@
           { name: 'icon', selector: { select: { options: ICON_OPTIONS(), mode: 'dropdown' } } },
           { name: 'layout', selector: { select: { options: ['row', 'tile', 'icon'], mode: 'dropdown' } } },
         ] },
+        { name: 'style', selector: { select: { options: STYLE_OPTIONS, mode: 'dropdown' } } },
         ...actionFields('more-info'),
         { name: 'accent', selector: { text: {} } },
         { name: 'icon_size', selector: { number: { min: 16, max: 120, mode: 'box' } } },
       ];
       const c = this._config || {};
       this.appendChild(this._form(schema, { layout: 'row', icon: '', ...c }, (v) =>
-        this._emit({ type: c.type || 'custom:ha-custom-icons-card', ...prune(v) })));
+        this._emit({ type: c.type || 'custom:livicon-card', ...prune(v) })));
     }
   }
 
-  class HaCustomIconsGroupCardEditor extends EditorBase {
+  class LiviconGroupCardEditor extends EditorBase {
     constructor() { super(); this._open = new Set(); }
     _items() { return (this._config?.entities || []).map((e) => (typeof e === 'string' ? { entity: e } : { ...e })); }
     _commit(items, rerender) {
@@ -1095,10 +1565,11 @@
           { name: 'master_toggle', selector: { boolean: {} } },
           { name: 'icon_size', selector: { number: { min: 16, max: 120, mode: 'box' } } },
         ] },
+        { name: 'style', selector: { select: { options: STYLE_OPTIONS, mode: 'dropdown' } } },
         { name: 'accent', selector: { text: {} } },
         ...actionFields('more-info'),
       ], { master_toggle: true, ...c, entities: undefined }, (v) =>
-        this._emit({ ...prune({ ...v, type: c.type || 'custom:ha-custom-icons-group-card' }), entities: c.entities || [] })));
+        this._emit({ ...prune({ ...v, type: c.type || 'custom:livicon-group-card' }), entities: c.entities || [] })));
 
       // entity list
       const h = document.createElement('h4'); h.textContent = 'Entities'; this.appendChild(h);
@@ -1154,16 +1625,16 @@
   }
 
   const define = (n, c) => { if (!customElements.get(n)) customElements.define(n, c); };
-  define('ha-custom-icons-card', HaCustomIconsCard);
-  define('ha-custom-icons-group-card', HaCustomIconsGroupCard);
-  define('ha-custom-icons-card-editor', HaCustomIconsCardEditor);
-  define('ha-custom-icons-group-card-editor', HaCustomIconsGroupCardEditor);
+  define('livicon-card', LiviconCard);
+  define('livicon-group-card', LiviconGroupCard);
+  define('livicon-card-editor', LiviconCardEditor);
+  define('livicon-group-card-editor', LiviconGroupCardEditor);
 
   window.customCards = window.customCards || [];
   window.customCards.push(
-    { type: 'ha-custom-icons-card', name: 'HA Custom Icons — Icon', description: 'One device with an animated icon that follows its state.', preview: true },
-    { type: 'ha-custom-icons-group-card', name: 'HA Custom Icons — Group', description: 'A titled list of devices with animated icons and a master toggle.', preview: true },
+    { type: 'livicon-card', name: 'Livicon — Icon', description: 'One device with an animated icon that follows its state.', preview: true },
+    { type: 'livicon-group-card', name: 'Livicon — Group', description: 'A titled list of devices with animated icons and a master toggle.', preview: true },
   );
-  window.haCustomIcons = Object.keys(ICONS);
-  console.info(`%c HA-CUSTOM-ICONS %c v${VERSION} — ${Object.keys(ICONS).length} icons`, 'color:#000;background:#ffb020;font-weight:700', 'color:#ffb020');
+  window.liviconIcons = Object.keys(ICONS);
+  console.info(`%c LIVICON %c v${VERSION} — ${Object.keys(ICONS).length} icons`, 'color:#000;background:#ffb020;font-weight:700', 'color:#ffb020');
 })();

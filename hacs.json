@@ -1,6 +1,6 @@
 {
-  "name": "HA Custom Icons",
-  "filename": "ha-custom-icons.js",
+  "name": "Livicon",
+  "filename": "livicon.js",
   "render_readme": true,
   "homeassistant": "2024.1.0"
 }

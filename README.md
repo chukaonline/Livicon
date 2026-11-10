@@ -1,32 +1,34 @@
-# HA Custom Icons
+# Livicon
 
 Animated device icons for Home Assistant dashboards. **44 icons** that follow your entity's state:
 fans spin, bulbs glow in the light's real colour, the washer drum turns, the robot vacuum trundles,
 solar panels shimmer, the battery fills to its real level, doors swing open, the weather changes with the forecast.
 A device that is off sits perfectly still.
 
-One file. No dependencies. Original artwork (MIT). Works with any theme.
+One file. No dependencies. Original artwork (MIT). Works with any theme. Two looks: **flat** (default) and realistic **3D** (`style: 3d`).
 
 ## Install with HACS
 
 1. HACS → **⋮ → Custom repositories**
 2. Repository: `https://github.com/chukaonline/HA-Custom-Icons` · Category: **Dashboard** (called *Plugin* in older HACS)
-3. Download **HA Custom Icons**, then reload your browser (HACS adds the resource for you).
+3. Download **Livicon**, then reload your browser (HACS adds the resource for you).
+
+Cards: `custom:livicon-card` and `custom:livicon-group-card`.
 
 <details><summary>Manual install</summary>
 
-Copy `dist/ha-custom-icons.js` to `/config/www/`, then **Settings → Dashboards → ⋮ → Resources → Add**:
-`/local/ha-custom-icons.js` as a *JavaScript module*. Reload the browser.
+Copy `dist/livicon.js` to `/config/www/`, then **Settings → Dashboards → ⋮ → Resources → Add**:
+`/local/livicon.js` as a *JavaScript module*. Reload the browser.
 </details>
 
 ## Cards
 
-Add them from the card picker (search "HA Custom Icons") — both have a visual editor — or use YAML.
+Add them from the card picker (search "Livicon") — both have a visual editor — or use YAML.
 
 ### Group card: a titled list with a master toggle
 
 ```yaml
-type: custom:ha-custom-icons-group-card
+type: custom:livicon-group-card
 title: Energy
 entities:
   - sensor.solar_power
@@ -44,6 +46,7 @@ entities:
 | `master_toggle` | `true`  | hidden automatically if nothing is toggleable    |
 | `accent`        | amber   | any CSS colour                                   |
 | `icon_size`     | 34      | px                                               |
+| `style`         | flat    | `flat` or `3d` (see below)                       |
 | `tap_action`    | more-info | default for every entity (see Actions)         |
 | `hold_action`   | none    | default for every entity (see Actions)           |
 
@@ -53,12 +56,12 @@ auto-detection guesses wrong, or set its own tap/hold action. Re-order with **dr
 ### Single card
 
 ```yaml
-type: custom:ha-custom-icons-card
+type: custom:livicon-card
 entity: weather.home
 layout: tile        # row (default) | tile | icon
 ```
 
-Options: `entity`, `name`, `icon`, `layout`, `accent`, `icon_size`, `show_toggle`, `tap_action`, `hold_action`, and for batteries
+Options: `entity`, `name`, `icon`, `layout`, `style`, `accent`, `icon_size`, `show_toggle`, `tap_action`, `hold_action`, and for batteries
 `charging_entity` (any entity that is `on`/`charging` while charging — shows a lightning bolt).
 
 ### Actions
@@ -126,6 +129,22 @@ Wrong guess? Set `icon:` for that entity.
 
 Respects the browser's *reduce motion* setting.
 
+## 3D style
+
+```yaml
+type: custom:livicon-group-card
+title: Kitchen
+style: 3d          # flat (default) | 3d  — also settable per card or per entity
+entities:
+  - switch.fridge
+  - switch.dishwasher
+```
+
+All 44 icons exist in 3D with the same names, auto-detection and live animations (spinning drum, rising steam, filling battery,
+swinging door, weather…). They are drawn with gradients, depth and soft shadows, lit from the top-left, so they look right on
+light and dark themes alike. A device that is off is a dull, unlit object; on, its lamps, glass and indicators light up.
+You can mix: `style: 3d` on one entity inside a flat group works.
+
 ## Theming
 
 The card uses your theme's own variables (`--primary-text-color`, `--secondary-text-color`, card background), so it fits
@@ -142,7 +161,7 @@ accent: "#4dd0e1"          # per card
 
 ## Add or change an icon
 
-Every icon is an SVG fragment in the `ICONS` object in `dist/ha-custom-icons.js` (48×48 grid). Use the helper classes
+Every icon is an SVG fragment in the `ICONS` object in `dist/livicon.js` (48×48 grid). Use the helper classes
 (`ln`, `fl`, `acc`, `acs`, `fx`…) and it picks up on/off colours; add a line to `KEYWORDS` so entities find it by name.
 
 ## Preview without Home Assistant
@@ -150,11 +169,11 @@ Every icon is an SVG fragment in the `ICONS` object in `dist/ha-custom-icons.js`
 ```bash
 python3 -m http.server   # in this folder, then open http://localhost:8000/preview.html
 ```
-`preview.html` mocks a dashboard with every icon on and off, all weather states, and light/blue themes.
+`preview.html` mocks a dashboard with every icon (flat and 3D) on and off, all weather states, tap/hold actions, a live group-editor test and light/blue themes.
 
 ## Releasing
 
-Tag a version (`git tag v2.0.0 && git push --tags`) and the *Release* workflow attaches `ha-custom-icons.js` to a GitHub release,
+Tag a version (`git tag v2.0.0 && git push --tags`) and the *Release* workflow attaches `livicon.js` to a GitHub release,
 which HACS prefers. For users who aren't you, the repository must be **public**.
 
 ## License
