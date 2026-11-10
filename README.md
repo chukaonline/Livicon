@@ -26,7 +26,7 @@ Add them from the card picker (search "HA Custom Icons") — both have a visual 
 ### Group card: a titled list with a master toggle
 
 ```yaml
-type: custom:tekoah-icon-group-card
+type: custom:ha-custom-icons-group-card
 title: Energy
 entities:
   - sensor.solar_power
@@ -48,7 +48,7 @@ entities:
 ### Single card
 
 ```yaml
-type: custom:tekoah-icon-card
+type: custom:ha-custom-icons-card
 entity: weather.home
 layout: tile        # row (default) | tile | icon
 ```

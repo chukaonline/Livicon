@@ -113,24 +113,24 @@ const ents = (pred) => Object.keys(S).filter(pred).map(entity => ({ entity }));
 /* 1. existing dashboard */
 const control = document.getElementById('control');
 const c1 = stack(control), c2 = stack(control), c3 = stack(control), c4 = stack(control);
-mk('tekoah-icon-group-card', { title: 'Fans', entities: ents(k => k.startsWith('fan.')) }, c1);
-mk('tekoah-icon-group-card', { title: 'Heater and AC', entities: ents(k => /^climate\.(?!thermostat)/.test(k)) }, c1);
-mk('tekoah-icon-group-card', { title: 'Refrigerators', entities: ents(k => /fridge|freezer/.test(k)) }, c2);
-mk('tekoah-icon-card', { entity: 'switch.family_room_extension', layout: 'tile' }, c2);
-mk('tekoah-icon-group-card', { title: 'Socket', entities: [
+mk('ha-custom-icons-group-card', { title: 'Fans', entities: ents(k => k.startsWith('fan.')) }, c1);
+mk('ha-custom-icons-group-card', { title: 'Heater and AC', entities: ents(k => /^climate\.(?!thermostat)/.test(k)) }, c1);
+mk('ha-custom-icons-group-card', { title: 'Refrigerators', entities: ents(k => /fridge|freezer/.test(k)) }, c2);
+mk('ha-custom-icons-card', { entity: 'switch.family_room_extension', layout: 'tile' }, c2);
+mk('ha-custom-icons-group-card', { title: 'Socket', entities: [
   'washing_machine','kitchen_extractor','tv_socket_left','tv_socket_right','blender_socket','pressure_pump','sewing_machine','living_room_socket_left',
   'living_room_socket_right','familytv','fence_charger','inverter_charge_controller','water_pump','bedroom_tv'].map(n => ({ entity: 'switch.' + n })) }, c3);
-mk('tekoah-icon-group-card', { title: 'Lights', entities: ents(k => k.startsWith('light.')) }, c4);
+mk('ha-custom-icons-group-card', { title: 'Lights', entities: ents(k => k.startsWith('light.')) }, c4);
 
 /* 2. typical home */
 const home = document.getElementById('home');
 const h1 = stack(home), h2 = stack(home), h3 = stack(home), h4 = stack(home);
-mk('tekoah-icon-group-card', { title: 'Energy', entities: ['sensor.solar_power','sensor.battery_soc','sensor.inverter_output','switch.ev_charger','sensor.phone_battery'].map(entity => ({ entity })) }, h1);
-mk('tekoah-icon-group-card', { title: 'Security', entities: ['binary_sensor.front_door','binary_sensor.kitchen_window','binary_sensor.hallway_motion','binary_sensor.living_room_presence','lock.front_door','camera.front_gate','alarm_control_panel.home','binary_sensor.smoke_detector','binary_sensor.kitchen_leak','doorbell.front'].map(entity => ({ entity })) }, h2);
-mk('tekoah-icon-group-card', { title: 'Comfort', entities: ['climate.thermostat','sensor.lounge_temperature','sensor.lounge_humidity','cover.garage_door','cover.lounge_blinds','water_heater.geyser','switch.air_purifier','binary_sensor.wifi','media_player.kitchen_speaker'].map(entity => ({ entity })) }, h3);
-mk('tekoah-icon-card', { entity: 'weather.home', layout: 'tile' }, h4);
-mk('tekoah-icon-card', { entity: 'vacuum.robo', layout: 'tile' }, h4);
-mk('tekoah-icon-group-card', { title: 'Kitchen & laundry', entities: ['switch.dishwasher','switch.dryer','switch.kettle'].map(entity => ({ entity })) }, h4);
+mk('ha-custom-icons-group-card', { title: 'Energy', entities: ['sensor.solar_power','sensor.battery_soc','sensor.inverter_output','switch.ev_charger','sensor.phone_battery'].map(entity => ({ entity })) }, h1);
+mk('ha-custom-icons-group-card', { title: 'Security', entities: ['binary_sensor.front_door','binary_sensor.kitchen_window','binary_sensor.hallway_motion','binary_sensor.living_room_presence','lock.front_door','camera.front_gate','alarm_control_panel.home','binary_sensor.smoke_detector','binary_sensor.kitchen_leak','doorbell.front'].map(entity => ({ entity })) }, h2);
+mk('ha-custom-icons-group-card', { title: 'Comfort', entities: ['climate.thermostat','sensor.lounge_temperature','sensor.lounge_humidity','cover.garage_door','cover.lounge_blinds','water_heater.geyser','switch.air_purifier','binary_sensor.wifi','media_player.kitchen_speaker'].map(entity => ({ entity })) }, h3);
+mk('ha-custom-icons-card', { entity: 'weather.home', layout: 'tile' }, h4);
+mk('ha-custom-icons-card', { entity: 'vacuum.robo', layout: 'tile' }, h4);
+mk('ha-custom-icons-group-card', { title: 'Kitchen & laundry', entities: ['switch.dishwasher','switch.dryer','switch.kettle'].map(entity => ({ entity })) }, h4);
 
 /* 3. gallery: one mock entity per icon with realistic domain/state */
 const G = {
@@ -155,25 +155,25 @@ const G = {
 };
 const gal = document.getElementById('gallery');
 const tiles = [];
-window.tekoahIcons.forEach(t => [1, 0].forEach(on => {
+window.haCustomIcons.forEach(t => [1, 0].forEach(on => {
   const g = G[t] || { d: 'switch', on: 'on', off: 'off' };
   const e = `${g.d}.gal_${t}_${on}`;
   add(e, t + (on ? '' : ' (off)'), on ? g.on : g.off, g.a || {});
   tiles.push([e, t, on]);
 }));
-tiles.filter(x => x[2]).concat(tiles.filter(x => !x[2])).forEach(([e, t]) => mk('tekoah-icon-card', { entity: e, icon: t, layout: 'tile' }, gal));
+tiles.filter(x => x[2]).concat(tiles.filter(x => !x[2])).forEach(([e, t]) => mk('ha-custom-icons-card', { entity: e, icon: t, layout: 'tile' }, gal));
 
 /* 4. weather states */
 const wx = document.getElementById('wx');
 ['sunny','clear-night','partlycloudy','cloudy','rainy','pouring','snowy','snowy-rainy','lightning','lightning-rainy','fog','windy','hail'].forEach(s => {
   add('weather.' + slug(s), s, s, { temperature: 21 });
-  mk('tekoah-icon-card', { entity: 'weather.' + slug(s), name: s, layout: 'tile' }, wx);
+  mk('ha-custom-icons-card', { entity: 'weather.' + slug(s), name: s, layout: 'tile' }, wx);
 });
 
 /* 5. themes */
-mk('tekoah-icon-group-card', { title: 'Fans', accent: '#e65100', entities: ents(k => k.startsWith('fan.')) }, document.getElementById('lightcols'));
-mk('tekoah-icon-group-card', { title: 'Security', accent: '#e65100', entities: ['binary_sensor.front_door','binary_sensor.hallway_motion','lock.front_door','camera.front_gate','sensor.battery_soc'].map(entity => ({ entity })) }, document.getElementById('lightcols'));
-mk('tekoah-icon-group-card', { title: 'Energy', accent: '#4dd0e1', entities: ['sensor.solar_power','sensor.battery_soc','switch.ev_charger','weather.home'].map(entity => ({ entity })) }, document.getElementById('bluecols'));
+mk('ha-custom-icons-group-card', { title: 'Fans', accent: '#e65100', entities: ents(k => k.startsWith('fan.')) }, document.getElementById('lightcols'));
+mk('ha-custom-icons-group-card', { title: 'Security', accent: '#e65100', entities: ['binary_sensor.front_door','binary_sensor.hallway_motion','lock.front_door','camera.front_gate','sensor.battery_soc'].map(entity => ({ entity })) }, document.getElementById('lightcols'));
+mk('ha-custom-icons-group-card', { title: 'Energy', accent: '#4dd0e1', entities: ['sensor.solar_power','sensor.battery_soc','switch.ev_charger','weather.home'].map(entity => ({ entity })) }, document.getElementById('bluecols'));
 render();
 </script>
 </body>

@@ -7,13 +7,13 @@ type: sections        # use `masonry` if that's what your dashboard uses and dro
 sections:
   - type: grid
     cards:
-      - type: custom:tekoah-icon-group-card
+      - type: custom:ha-custom-icons-group-card
         title: Fans
         entities:
           - switch.ifeatu_fan
           - switch.ebube_fan
           - switch.daddy_room_fan
-      - type: custom:tekoah-icon-group-card
+      - type: custom:ha-custom-icons-group-card
         title: Heater and AC
         entities:
           - climate.dboy_heater
@@ -25,19 +25,19 @@ sections:
           - climate.guest_ac
   - type: grid
     cards:
-      - type: custom:tekoah-icon-group-card
+      - type: custom:ha-custom-icons-group-card
         title: Refrigerators
         entities:
           - switch.kitchen_fridge
           - switch.deep_freezer
           - switch.kitchen_freezer
           - switch.bedroom_fridge
-      - type: custom:tekoah-icon-card
+      - type: custom:ha-custom-icons-card
         entity: switch.family_room_extension
         layout: tile
   - type: grid
     cards:
-      - type: custom:tekoah-icon-group-card
+      - type: custom:ha-custom-icons-group-card
         title: Socket
         entities:
           - switch.washing_machine
@@ -56,7 +56,7 @@ sections:
           - switch.bedroom_tv
   - type: grid
     cards:
-      - type: custom:tekoah-icon-group-card
+      - type: custom:ha-custom-icons-group-card
         title: Lights
         entities:
           - light.kitchen_light

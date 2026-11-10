@@ -2,8 +2,8 @@
  * HA Custom Icons — animated device icons for Home Assistant
  * https://github.com/chukaonline/HA-Custom-Icons   (MIT, original artwork, no dependencies)
  *
- *   custom:tekoah-icon-card        one device   (layout: row | tile | icon)
- *   custom:tekoah-icon-group-card  titled list with master toggle
+ *   custom:ha-custom-icons-card        one device   (layout: row | tile | icon)
+ *   custom:ha-custom-icons-group-card  titled list with master toggle
  *
  * The icon is chosen automatically from the entity (device_class, domain, name) or set with `icon:`.
  * Colours come from the active HA theme (--primary-text-color etc.) so it works with any theme;
@@ -850,11 +850,11 @@
   const pickEntities = (hass, n) => Object.keys(hass?.states || {}).filter((e) => LIKELY.test(e)).slice(0, n);
 
   /* ------------------------------------------------------- single-entity card */
-  class TekoahIconCard extends HTMLElement {
-    static getConfigElement() { return document.createElement('tekoah-icon-card-editor'); }
+  class HaCustomIconsCard extends HTMLElement {
+    static getConfigElement() { return document.createElement('ha-custom-icons-card-editor'); }
     static getStubConfig(hass) { return { entity: pickEntities(hass, 1)[0] || '', layout: 'row' }; }
     setConfig(config) {
-      if (!config || !config.entity) throw new Error('tekoah-icon-card: `entity` is required');
+      if (!config || !config.entity) throw new Error('ha-custom-icons-card: `entity` is required');
       this._config = config;
       if (!this.shadowRoot) this.attachShadow({ mode: 'open' });
       const layout = ['row', 'tile', 'icon'].includes(config.layout) ? config.layout : 'row';
@@ -868,11 +868,11 @@
   }
 
   /* ------------------------------------------------------------- group card */
-  class TekoahIconGroupCard extends HTMLElement {
-    static getConfigElement() { return document.createElement('tekoah-icon-group-card-editor'); }
+  class HaCustomIconsGroupCard extends HTMLElement {
+    static getConfigElement() { return document.createElement('ha-custom-icons-group-card-editor'); }
     static getStubConfig(hass) { return { title: 'Devices', entities: pickEntities(hass, 3) }; }
     setConfig(config) {
-      if (!config || !Array.isArray(config.entities)) throw new Error('tekoah-icon-group-card: `entities` list is required');
+      if (!config || !Array.isArray(config.entities)) throw new Error('ha-custom-icons-group-card: `entities` list is required');
       this._config = config;
       if (!this.shadowRoot) this.attachShadow({ mode: 'open' });
       const showMaster = config.master_toggle !== false && !!config.title;
@@ -939,7 +939,7 @@
       this._form.data = this._toForm(this._config || {});
     }
   }
-  class TekoahIconCardEditor extends EditorBase {
+  class HaCustomIconsCardEditor extends EditorBase {
     _schema() {
       return [
         { name: 'entity', required: true, selector: { entity: {} } },
@@ -953,9 +953,9 @@
       ];
     }
     _toForm(c) { return { layout: 'row', icon: '', ...c }; }
-    _fromForm(v) { const o = { ...v }; ['icon', 'name', 'accent', 'icon_size'].forEach((k) => (o[k] === '' || o[k] == null) && delete o[k]); return { type: this._config?.type || 'custom:tekoah-icon-card', ...o }; }
+    _fromForm(v) { const o = { ...v }; ['icon', 'name', 'accent', 'icon_size'].forEach((k) => (o[k] === '' || o[k] == null) && delete o[k]); return { type: this._config?.type || 'custom:ha-custom-icons-card', ...o }; }
   }
-  class TekoahIconGroupCardEditor extends EditorBase {
+  class HaCustomIconsGroupCardEditor extends EditorBase {
     _schema() {
       return [
         { name: 'title', selector: { text: {} } },
@@ -970,21 +970,21 @@
       const prev = new Map((this._config?.entities || []).filter((e) => typeof e === 'object').map((e) => [e.entity, e])); // keep per-entity name/icon set in YAML
       const o = { ...v, entities: (v.entities || []).map((id) => prev.get(id) || id) };
       ['title', 'accent', 'icon_size'].forEach((k) => (o[k] === '' || o[k] == null) && delete o[k]);
-      return { type: this._config?.type || 'custom:tekoah-icon-group-card', ...o };
+      return { type: this._config?.type || 'custom:ha-custom-icons-group-card', ...o };
     }
   }
 
   const define = (n, c) => { if (!customElements.get(n)) customElements.define(n, c); };
-  define('tekoah-icon-card', TekoahIconCard);
-  define('tekoah-icon-group-card', TekoahIconGroupCard);
-  define('tekoah-icon-card-editor', TekoahIconCardEditor);
-  define('tekoah-icon-group-card-editor', TekoahIconGroupCardEditor);
+  define('ha-custom-icons-card', HaCustomIconsCard);
+  define('ha-custom-icons-group-card', HaCustomIconsGroupCard);
+  define('ha-custom-icons-card-editor', HaCustomIconsCardEditor);
+  define('ha-custom-icons-group-card-editor', HaCustomIconsGroupCardEditor);
 
   window.customCards = window.customCards || [];
   window.customCards.push(
-    { type: 'tekoah-icon-card', name: 'HA Custom Icons — Icon', description: 'One device with an animated icon that follows its state.', preview: true },
-    { type: 'tekoah-icon-group-card', name: 'HA Custom Icons — Group', description: 'A titled list of devices with animated icons and a master toggle.', preview: true },
+    { type: 'ha-custom-icons-card', name: 'HA Custom Icons — Icon', description: 'One device with an animated icon that follows its state.', preview: true },
+    { type: 'ha-custom-icons-group-card', name: 'HA Custom Icons — Group', description: 'A titled list of devices with animated icons and a master toggle.', preview: true },
   );
-  window.tekoahIcons = Object.keys(ICONS);
+  window.haCustomIcons = Object.keys(ICONS);
   console.info(`%c HA-CUSTOM-ICONS %c v${VERSION} — ${Object.keys(ICONS).length} icons`, 'color:#000;background:#ffb020;font-weight:700', 'color:#ffb020');
 })();
