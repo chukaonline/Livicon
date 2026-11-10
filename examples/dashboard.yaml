@@ -1,0 +1,78 @@
+# Example "Control" view using HA Custom Icons.
+# ⚠ The entity IDs below are GUESSES made from the device names — replace them with your real
+#   ones (Settings → Devices & services → Entities), or send the list and I'll generate this for you.
+title: Control
+path: control
+type: sections        # use `masonry` if that's what your dashboard uses and drop the section wrappers
+sections:
+  - type: grid
+    cards:
+      - type: custom:tekoah-icon-group-card
+        title: Fans
+        entities:
+          - switch.ifeatu_fan
+          - switch.ebube_fan
+          - switch.daddy_room_fan
+      - type: custom:tekoah-icon-group-card
+        title: Heater and AC
+        entities:
+          - climate.dboy_heater
+          - climate.guest_room_heater
+          - climate.master_bedroom_heater
+          - climate.ifeatu_heater
+          - climate.master_bedroom_ac
+          - climate.parlor_ac
+          - climate.guest_ac
+  - type: grid
+    cards:
+      - type: custom:tekoah-icon-group-card
+        title: Refrigerators
+        entities:
+          - switch.kitchen_fridge
+          - switch.deep_freezer
+          - switch.kitchen_freezer
+          - switch.bedroom_fridge
+      - type: custom:tekoah-icon-card
+        entity: switch.family_room_extension
+        layout: tile
+  - type: grid
+    cards:
+      - type: custom:tekoah-icon-group-card
+        title: Socket
+        entities:
+          - switch.washing_machine
+          - switch.kitchen_extractor
+          - switch.tv_socket_left
+          - switch.tv_socket_right
+          - switch.blender_socket
+          - switch.pressure_pump
+          - switch.sewing_machine
+          - switch.living_room_socket_left
+          - switch.living_room_socket_right
+          - switch.familytv
+          - switch.fence_charger
+          - switch.inverter_charge_controller
+          - switch.water_pump
+          - switch.bedroom_tv
+  - type: grid
+    cards:
+      - type: custom:tekoah-icon-group-card
+        title: Lights
+        entities:
+          - light.kitchen_light
+          - light.kitchen_store_light
+          - light.kitchen_acent_light
+          - light.outside_security_light
+          - light.security_light
+          - light.staircase_light
+          - light.bedroom_color_light
+          - light.dboy_toilet
+          - light.master_bathroom
+          - light.bedroom_light
+          - light.wardrobe
+          - light.sewing_room_light
+          - light.guest_bathroom
+          - light.guest_toilet
+          - light.boys_room_ceiling
+          - light.boys_room_wall
+          - light.dboy_room_wall

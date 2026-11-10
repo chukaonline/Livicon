@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>HA Custom Icons preview</title>
+<style>
+  :root{--primary-text-color:#e8eaed;--secondary-text-color:#a0a5ad;--ha-card-background:rgba(30,26,24,.78);
+        font-family:Roboto,-apple-system,"Segoe UI",sans-serif}
+  body{margin:0;min-height:100vh;color:var(--primary-text-color);
+       background:radial-gradient(1200px 600px at 20% 0%,#4a3a2c 0%,#1d1815 60%,#100d0b 100%) fixed}
+  h2{font-weight:400;font-size:15px;color:#c9ccd1;margin:28px 20px 8px;letter-spacing:.04em;text-transform:uppercase}
+  .cols{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:14px;padding:0 14px;align-items:start}
+  .stack{display:flex;flex-direction:column;gap:14px}
+  .gal{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px;padding:0 14px}
+  ha-card{display:block;background:var(--ha-card-background);border-radius:14px;border:1px solid rgba(255,255,255,.06);
+          backdrop-filter:blur(12px);box-shadow:0 4px 18px rgba(0,0,0,.35);color:var(--primary-text-color)}
+  .light{--primary-text-color:#1f2328;--secondary-text-color:#59616b;--ha-card-background:#fff}
+  .blue{--primary-text-color:#d6e4ff;--secondary-text-color:#8fa6cc;--ha-card-background:#16233b}
+</style>
+</head>
+<body>
+<h2>Control view (mock of an existing dashboard)</h2>
+<div class="cols" id="control"></div>
+
+<h2>A typical home — icons auto-detected, no <code>icon:</code> set</h2>
+<div class="cols" id="home"></div>
+
+<h2>Gallery — tap a tile to toggle (top: on, bottom: off)</h2>
+<div class="gal" id="gallery"></div>
+
+<h2>Weather states</h2>
+<div class="gal" id="wx"></div>
+
+<h2>Light theme</h2>
+<div class="cols light" id="lightcols" style="padding:14px;background:#eef0f3;margin:0 14px;border-radius:14px"></div>
+<h2>Blue theme (accent override)</h2>
+<div class="cols blue" id="bluecols" style="padding:14px;background:#0c1626;margin:0 14px 40px;border-radius:14px"></div>
+
+<script src="dist/ha-custom-icons.js"></script>
+<script>
+/* ---- mock Home Assistant ---- */
+const S = {};
+const slug = (n) => n.toLowerCase().replace(/[^a-z0-9]+/g, '_');
+const add = (id, name, state = 'off', attrs = {}) => (S[id] = { entity_id: id, state, attributes: { friendly_name: name, ...attrs } });
+const sw = (name, on) => add('switch.' + slug(name), name, on ? 'on' : 'off');
+const li = (name, on, a) => add('light.' + slug(name), name, on ? 'on' : 'off', a);
+
+[['Ifeatu Fan',1],['Ebube Fan',0],['Daddy room Fan',1]].forEach(([n,o]) => add('fan.'+slug(n), n, o?'on':'off', o?{percentage:66}:{}));
+[['Kitchen Fridge',0],['Deep Freezer',0],['Kitchen Freezer',0],['Bedroom Fridge',1]].forEach(([n,o])=>sw(n,o));
+add('switch.family_room_extension','Family Room Extension','unavailable');
+[['Washing Machine',1],['Kitchen Extractor',0],['TV Socket Left',0],['TV Socket Right',0],['Blender Socket',0],['Pressure Pump',0],
+ ['Sewing Machine',1],['Living Room Socket Left',0],['Living Room Socket Right',1],['FamilyTV',1],['Fence Charger',1],
+ ['Inverter charge controller',1],['Water Pump',1],['Bedroom TV',1]].forEach(([n,o])=>sw(n,o));
+[['Kitchen Light',0],['Kitchen Store Light',0],['Kitchen Acent Light',0],['Outside Security Light',1],['Security Light',0],['Staircase Light',0],
+ ['Bedroom color light',1,{rgb_color:[168,85,247],brightness:220}],['Dboy Toilet',0],['Master Bathroom',0],['Bedroom Light',1,{brightness:255}],
+ ['Wardrobe',0],['Sewing Room light',0],['Guest Bathroom',1,{brightness:140}],['Guest Toilet',0],['Boys room ceiling',1,{rgb_color:[79,195,247],brightness:255}],['Boys Room Wall',0],['Dboy Room Wall',0]]
+ .forEach(([n,o,a])=>li(n,o,a));
+['Dboy Heater','Guest Room Heater','Master Bedroom Heater','Ifeatu Heater'].forEach(n=>add('climate.'+slug(n),n,'off',{hvac_modes:['off','heat']}));
+['Master Bedroom AC','Parlor AC','Guest AC'].forEach(n=>add('climate.'+slug(n),n,'off',{hvac_modes:['off','cool','heat']}));
+
+/* typical home */
+add('sensor.solar_power','Solar Power','1840',{unit_of_measurement:'W',device_class:'power'});
+add('sensor.battery_soc','Lithium Battery','72',{unit_of_measurement:'%',device_class:'battery'});
+add('sensor.phone_battery','Phone Battery','12',{unit_of_measurement:'%',device_class:'battery'});
+add('sensor.inverter_output','Inverter Output','950',{unit_of_measurement:'W',device_class:'power'});
+add('switch.ev_charger','EV Charger','on');
+add('binary_sensor.front_door','Front Door','on',{device_class:'door'});
+add('binary_sensor.kitchen_window','Kitchen Window','off',{device_class:'window'});
+add('binary_sensor.hallway_motion','Hallway Motion','on',{device_class:'motion'});
+add('binary_sensor.living_room_presence','Living Room Presence','on',{device_class:'occupancy'});
+add('binary_sensor.smoke_detector','Smoke Detector','off',{device_class:'smoke'});
+add('binary_sensor.kitchen_leak','Kitchen Leak','on',{device_class:'moisture'});
+add('binary_sensor.wifi','Wi-Fi Router','on',{device_class:'connectivity'});
+add('weather.home','Home','partlycloudy',{temperature:27,temperature_unit:'°C'});
+add('camera.front_gate','Front Gate Camera','recording');
+add('vacuum.robo','Robot Vacuum','cleaning');
+add('lock.front_door','Front Door Lock','unlocked');
+add('cover.garage_door','Garage Door','open',{device_class:'garage'});
+add('cover.lounge_blinds','Lounge Blinds','closed',{device_class:'blind'});
+add('sensor.lounge_temperature','Lounge Temperature','24.5',{unit_of_measurement:'°C',device_class:'temperature'});
+add('sensor.lounge_humidity','Lounge Humidity','61',{unit_of_measurement:'%',device_class:'humidity'});
+add('climate.thermostat','Hallway Thermostat','heat',{hvac_modes:['off','heat','cool'],hvac_action:'heating'});
+add('media_player.kitchen_speaker','Kitchen Speaker','playing');
+add('alarm_control_panel.home','Home Alarm','armed_away');
+add('water_heater.geyser','Geyser','heat');
+add('switch.air_purifier','Air Purifier','on');
+add('switch.dishwasher','Dishwasher','on');
+add('switch.dryer','Tumble Dryer','on');
+add('switch.kettle','Kettle','on');
+add('doorbell.front','Front Doorbell','on'); // unknown domain -> keyword
+
+const hass = {
+  states: S,
+  callService(domain, svc, data) {
+    [].concat(data.entity_id).forEach(i => { const s = S[i]; if (!s || s.state === 'unavailable') return;
+      const dom = i.split('.')[0];
+      const on = svc === 'turn_on' || (svc === 'toggle' && s.state === 'off');
+      s.state = on ? (dom === 'climate' ? (s.attributes.hvac_modes.includes('cool') ? 'cool' : 'heat') : 'on') : 'off';
+      if (dom === 'fan' && on) s.attributes.percentage = 66;
+    });
+    render();
+    return Promise.resolve();
+  },
+  config: { unit_system: { temperature: '°C' } },
+};
+const cards = [];
+const render = () => cards.forEach(c => (c.hass = { ...hass, states: S }));
+const mk = (type, cfg, parent) => { const el = document.createElement(type); el.setConfig(cfg); parent.appendChild(el); cards.push(el); el.addEventListener('hass-more-info', e => console.log('more-info', e.detail)); return el; };
+const stack = (parent) => { const d = document.createElement('div'); d.className = 'stack'; parent.appendChild(d); return d; };
+const ents = (pred) => Object.keys(S).filter(pred).map(entity => ({ entity }));
+
+/* 1. existing dashboard */
+const control = document.getElementById('control');
+const c1 = stack(control), c2 = stack(control), c3 = stack(control), c4 = stack(control);
+mk('tekoah-icon-group-card', { title: 'Fans', entities: ents(k => k.startsWith('fan.')) }, c1);
+mk('tekoah-icon-group-card', { title: 'Heater and AC', entities: ents(k => /^climate\.(?!thermostat)/.test(k)) }, c1);
+mk('tekoah-icon-group-card', { title: 'Refrigerators', entities: ents(k => /fridge|freezer/.test(k)) }, c2);
+mk('tekoah-icon-card', { entity: 'switch.family_room_extension', layout: 'tile' }, c2);
+mk('tekoah-icon-group-card', { title: 'Socket', entities: [
+  'washing_machine','kitchen_extractor','tv_socket_left','tv_socket_right','blender_socket','pressure_pump','sewing_machine','living_room_socket_left',
+  'living_room_socket_right','familytv','fence_charger','inverter_charge_controller','water_pump','bedroom_tv'].map(n => ({ entity: 'switch.' + n })) }, c3);
+mk('tekoah-icon-group-card', { title: 'Lights', entities: ents(k => k.startsWith('light.')) }, c4);
+
+/* 2. typical home */
+const home = document.getElementById('home');
+const h1 = stack(home), h2 = stack(home), h3 = stack(home), h4 = stack(home);
+mk('tekoah-icon-group-card', { title: 'Energy', entities: ['sensor.solar_power','sensor.battery_soc','sensor.inverter_output','switch.ev_charger','sensor.phone_battery'].map(entity => ({ entity })) }, h1);
+mk('tekoah-icon-group-card', { title: 'Security', entities: ['binary_sensor.front_door','binary_sensor.kitchen_window','binary_sensor.hallway_motion','binary_sensor.living_room_presence','lock.front_door','camera.front_gate','alarm_control_panel.home','binary_sensor.smoke_detector','binary_sensor.kitchen_leak','doorbell.front'].map(entity => ({ entity })) }, h2);
+mk('tekoah-icon-group-card', { title: 'Comfort', entities: ['climate.thermostat','sensor.lounge_temperature','sensor.lounge_humidity','cover.garage_door','cover.lounge_blinds','water_heater.geyser','switch.air_purifier','binary_sensor.wifi','media_player.kitchen_speaker'].map(entity => ({ entity })) }, h3);
+mk('tekoah-icon-card', { entity: 'weather.home', layout: 'tile' }, h4);
+mk('tekoah-icon-card', { entity: 'vacuum.robo', layout: 'tile' }, h4);
+mk('tekoah-icon-group-card', { title: 'Kitchen & laundry', entities: ['switch.dishwasher','switch.dryer','switch.kettle'].map(entity => ({ entity })) }, h4);
+
+/* 3. gallery: one mock entity per icon with realistic domain/state */
+const G = {
+  battery:{d:'sensor',on:'72',off:'0',a:{device_class:'battery',unit_of_measurement:'%'}},
+  temperature:{d:'sensor',on:'24',off:'8',a:{device_class:'temperature',unit_of_measurement:'°C'}},
+  humidity:{d:'sensor',on:'62',off:'30',a:{device_class:'humidity',unit_of_measurement:'%'}},
+  gauge:{d:'sensor',on:'65',off:'20',a:{unit_of_measurement:'%'}},
+  weather:{d:'weather',on:'sunny',off:'rainy',a:{temperature:27}},
+  camera:{d:'camera',on:'recording',off:'idle'},
+  door:{d:'binary_sensor',on:'on',off:'off',a:{device_class:'door'}},
+  window:{d:'binary_sensor',on:'on',off:'off',a:{device_class:'window'}},
+  motion:{d:'binary_sensor',on:'on',off:'off',a:{device_class:'motion'}},
+  presence:{d:'binary_sensor',on:'on',off:'off',a:{device_class:'occupancy'}},
+  smoke:{d:'binary_sensor',on:'on',off:'off',a:{device_class:'smoke'}},
+  leak:{d:'binary_sensor',on:'on',off:'off',a:{device_class:'moisture'}},
+  router:{d:'binary_sensor',on:'on',off:'off',a:{device_class:'connectivity'}},
+  garage:{d:'cover',on:'open',off:'closed'}, blind:{d:'cover',on:'open',off:'closed'},
+  lock:{d:'lock',on:'unlocked',off:'locked'}, vacuum:{d:'vacuum',on:'cleaning',off:'docked'},
+  alarm:{d:'alarm_control_panel',on:'triggered',off:'disarmed'},
+  solar:{d:'sensor',on:'1840',off:'0',a:{unit_of_measurement:'W'}},
+  inverter:{d:'sensor',on:'950',off:'0',a:{unit_of_measurement:'W'}},
+};
+const gal = document.getElementById('gallery');
+const tiles = [];
+window.tekoahIcons.forEach(t => [1, 0].forEach(on => {
+  const g = G[t] || { d: 'switch', on: 'on', off: 'off' };
+  const e = `${g.d}.gal_${t}_${on}`;
+  add(e, t + (on ? '' : ' (off)'), on ? g.on : g.off, g.a || {});
+  tiles.push([e, t, on]);
+}));
+tiles.filter(x => x[2]).concat(tiles.filter(x => !x[2])).forEach(([e, t]) => mk('tekoah-icon-card', { entity: e, icon: t, layout: 'tile' }, gal));
+
+/* 4. weather states */
+const wx = document.getElementById('wx');
+['sunny','clear-night','partlycloudy','cloudy','rainy','pouring','snowy','snowy-rainy','lightning','lightning-rainy','fog','windy','hail'].forEach(s => {
+  add('weather.' + slug(s), s, s, { temperature: 21 });
+  mk('tekoah-icon-card', { entity: 'weather.' + slug(s), name: s, layout: 'tile' }, wx);
+});
+
+/* 5. themes */
+mk('tekoah-icon-group-card', { title: 'Fans', accent: '#e65100', entities: ents(k => k.startsWith('fan.')) }, document.getElementById('lightcols'));
+mk('tekoah-icon-group-card', { title: 'Security', accent: '#e65100', entities: ['binary_sensor.front_door','binary_sensor.hallway_motion','lock.front_door','camera.front_gate','sensor.battery_soc'].map(entity => ({ entity })) }, document.getElementById('lightcols'));
+mk('tekoah-icon-group-card', { title: 'Energy', accent: '#4dd0e1', entities: ['sensor.solar_power','sensor.battery_soc','switch.ev_charger','weather.home'].map(entity => ({ entity })) }, document.getElementById('bluecols'));
+render();
+</script>
+</body>
+</html>
