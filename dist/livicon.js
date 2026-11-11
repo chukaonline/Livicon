@@ -1,6 +1,6 @@
 /*!
  * Livicon — animated device icons for Home Assistant
- * https://github.com/chukaonline/HA-Custom-Icons   (MIT, original artwork, no dependencies)
+ * https://github.com/chukaonline/Livicon   (MIT, original artwork, no dependencies)
  *
  *   custom:livicon-card        one device   (layout: row | tile | icon)
  *   custom:livicon-group-card  titled list with master toggle

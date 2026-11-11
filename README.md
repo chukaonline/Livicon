@@ -10,7 +10,7 @@ One file. No dependencies. Original artwork (MIT). Works with any theme. Two loo
 ## Install with HACS
 
 1. HACS → **⋮ → Custom repositories**
-2. Repository: `https://github.com/chukaonline/HA-Custom-Icons` · Category: **Dashboard** (called *Plugin* in older HACS)
+2. Repository: `https://github.com/chukaonline/Livicon` · Category: **Dashboard** (called *Plugin* in older HACS)
 3. Download **Livicon**, then reload your browser (HACS adds the resource for you).
 
 Cards: `custom:livicon-card` and `custom:livicon-group-card`.
