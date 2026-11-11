@@ -1,3 +1,5 @@
 # Keep GitHub language stats about the card itself, not the demo page
 preview.html linguist-documentation
 examples/* linguist-documentation
+# dist/ is treated as vendored build output by default; this file is the actual source
+dist/livicon.js -linguist-vendored -linguist-generated linguist-language=JavaScript
