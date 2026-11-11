@@ -1,11 +1,16 @@
 # Livicon
 
+![Livicon dashboard in the 3D style](https://raw.githubusercontent.com/chukaonline/Livicon/main/images/hero.png)
+
 Animated device icons for Home Assistant dashboards. **44 icons** that follow your entity's state:
 fans spin, bulbs glow in the light's real colour, the washer drum turns, the robot vacuum trundles,
 solar panels shimmer, the battery fills to its real level, doors swing open, the weather changes with the forecast.
 A device that is off sits perfectly still.
 
 One file. No dependencies. Original artwork (MIT). Works with any theme. Two looks: **flat** (default) and realistic **3D** (`style: 3d`).
+
+
+![All 44 icons in 3D](https://raw.githubusercontent.com/chukaonline/Livicon/main/images/gallery.png)
 
 ## Install with HACS
 
