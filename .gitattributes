@@ -1,0 +1,3 @@
+# Keep GitHub language stats about the card itself, not the demo page
+preview.html linguist-documentation
+examples/* linguist-documentation
