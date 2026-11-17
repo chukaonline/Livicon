@@ -5,13 +5,15 @@
  *   custom:livicon-card        one device   (layout: row | tile | icon)
  *   custom:livicon-group-card  titled list with master toggle
  *
+ * Haptics: taps fire Home Assistant's own `haptic` event (light / medium / failure), so phones and the Companion app vibrate
+ * exactly like built-in cards. Disable per card/group/entity with `haptic: false`.
  * `style: 3d` switches every icon to the realistic 3D look (default `flat`).
  * The icon is chosen automatically from the entity (device_class, domain, name) or set with `icon:`.
  * Colours come from the active HA theme (--primary-text-color etc.) so it works with any theme;
  * override with `accent:` or the CSS variables --tk-accent / --tk-off / --tk-body.
  */
 (() => {
-  const VERSION = '2.1.0';
+  const VERSION = '2.2.0';
 
   /* ------------------------------------------------------------------ icons
    * 48x48 grid. Helper classes (see STYLE): ln outline · fl solid · soft faint fill ·
@@ -1242,7 +1244,11 @@
       }
       // tap/hold on the icon + name (row layout) or on the whole tile (tile / icon layouts)
       const onTap = () => this.runAction(this.tapAction());
-      const onHold = () => this.runAction(this.holdAction());
+      const onHold = () => {
+        const a = this.holdAction();
+        if (['more-info', 'navigate', 'url'].includes(a.action)) this.haptic('medium'); // these give no feedback of their own
+        this.runAction(a);
+      };
       const canHold = () => this.holdAction().action !== 'none';
       if (layout === 'row') {
         this.icoEl.setAttribute('tabindex', '0');
@@ -1258,8 +1264,13 @@
     /* actions: HA-style objects, e.g. {action:'toggle'} — toggle | more-info | navigate | url | perform-action | none */
     tapAction() { return this.cfg.tap_action || { action: this.layout === 'row' || !this.toggleable ? 'more-info' : 'toggle' }; }
     holdAction() { return this.cfg.hold_action || { action: this.layout === 'row' ? 'none' : 'more-info' }; }
+    // Same event Home Assistant's own cards fire (see frontend src/data/haptics.ts). HA's window listener turns it into
+    // navigator.vibrate when the user's profile "Vibrate" setting is on; the Companion apps play native haptics.
+    // light/medium/heavy/selection/success/warning/failure. We never call navigator.vibrate ourselves, so the user's
+    // profile setting is respected and nothing double-vibrates.
+    haptic(type) { if (this.cfg.haptic !== false) this.fire('haptic', type); }
     runAction(a) {
-      const notify = (err) => this.fire('hass-notification', { message: `Action failed: ${err?.message || err}` });
+      const notify = (err) => { this.haptic('failure'); this.fire('hass-notification', { message: `Action failed: ${err?.message || err}` }); };
       switch (a?.action) {
         case 'toggle': this.toggle(); break;
         case 'more-info': this.moreInfo(); break;
@@ -1267,17 +1278,19 @@
           if (a.navigation_path) {
             window.history.pushState(null, '', a.navigation_path);
             window.dispatchEvent(new CustomEvent('location-changed', { detail: { replace: false } }));
-          }
+          } else this.haptic('failure');
           break;
         case 'url':
           if (a.url_path && !/^\s*javascript:/i.test(a.url_path)) window.open(a.url_path, '_blank', 'noopener');
+          else this.haptic('failure');
           break;
         case 'perform-action':
         case 'call-service': {
           const svc = a.perform_action || a.service;
-          if (!svc || !svc.includes('.') || !this.hass) break;
+          if (!svc || !svc.includes('.') || !this.hass) { this.haptic('failure'); break; }
           const [d, s] = svc.split('.');
           const p = this.hass.callService(d, s, a.data || a.service_data || {}, a.target);
+          this.haptic('light');
           if (p && p.catch) p.catch(notify);
           break;
         }
@@ -1296,9 +1309,10 @@
     toggle() {
       if (!this.hass) return;
       const st = this.hass.states[this.cfg.entity];
-      if (isUnavail(st)) return;
+      if (isUnavail(st)) { this.haptic('failure'); return; }
       const p = this.hass.callService('homeassistant', isOn(st) ? 'turn_off' : 'turn_on', { entity_id: this.cfg.entity });
-      if (p && p.catch) p.catch((err) => this.fire('hass-notification', { message: `Could not toggle ${this.cfg.entity}: ${err?.message || err}` }));
+      this.haptic('light');
+      if (p && p.catch) p.catch((err) => { this.haptic('failure'); this.fire('hass-notification', { message: `Could not toggle ${this.cfg.entity}: ${err?.message || err}` }); });
     }
     update(hass) {
       this.hass = hass;
@@ -1411,6 +1425,7 @@
         if (config.accent && !c.accent) c.accent = config.accent;
         if (config.icon_size && !c.icon_size) c.icon_size = config.icon_size;
         if (config.style && !c.style) c.style = config.style;
+        if (config.haptic === false && c.haptic === undefined) c.haptic = false;
         if (config.tap_action && !c.tap_action) c.tap_action = config.tap_action;   // group-wide defaults,
         if (config.hold_action && !c.hold_action) c.hold_action = config.hold_action; // per-entity values win
         return new Row(c, 'row', fire);
@@ -1429,7 +1444,9 @@
       if (!ids.length) return;
       const anyOn = ids.some((id) => isOn(h.states[id]));
       const p = h.callService('homeassistant', anyOn ? 'turn_off' : 'turn_on', { entity_id: ids });
-      if (p && p.catch) p.catch((err) => fireFrom(this)('hass-notification', { message: `Could not toggle group: ${err?.message || err}` }));
+      const buzz = (t) => { if (this._config.haptic !== false) fireFrom(this)('haptic', t); };
+      buzz('light');
+      if (p && p.catch) p.catch((err) => { buzz('failure'); fireFrom(this)('hass-notification', { message: `Could not toggle group: ${err?.message || err}` }); });
     }
     set hass(h) {
       this._hass = h;
@@ -1450,7 +1467,7 @@
     entity: 'Entity', name: 'Name (optional)', icon: 'Icon type', layout: 'Layout',
     accent: 'Accent colour (optional, e.g. #ffb020)', title: 'Title', master_toggle: 'Master toggle',
     icon_size: 'Icon size in px (optional)', charging_entity: 'Charging entity (battery icons)',
-    tap_action: 'Tap action', hold_action: 'Hold action', add: 'Add entity', style: 'Icon style',
+    tap_action: 'Tap action', hold_action: 'Hold action', haptic: 'Haptic feedback (vibrate on tap)', add: 'Add entity', style: 'Icon style',
   };
   const STYLE_OPTIONS = [{ value: 'flat', label: 'Flat (default)' }, { value: '3d', label: '3D (realistic)' }];
   const computeLabel = (s) => LABELS[s.name] || s.name;
@@ -1505,12 +1522,16 @@
         ] },
         { name: 'style', selector: { select: { options: STYLE_OPTIONS, mode: 'dropdown' } } },
         ...actionFields('more-info'),
+        { name: 'haptic', selector: { boolean: {} } },
         { name: 'accent', selector: { text: {} } },
         { name: 'icon_size', selector: { number: { min: 16, max: 120, mode: 'box' } } },
       ];
       const c = this._config || {};
-      this.appendChild(this._form(schema, { layout: 'row', icon: '', ...c }, (v) =>
-        this._emit({ type: c.type || 'custom:livicon-card', ...prune(v) })));
+      this.appendChild(this._form(schema, { layout: 'row', icon: '', haptic: true, ...c }, (v) => {
+        const o = prune(v);
+        if (o.haptic !== false) delete o.haptic; // on is the default; keep YAML tidy
+        this._emit({ type: c.type || 'custom:livicon-card', ...o });
+      }));
     }
   }
 
@@ -1563,13 +1584,17 @@
         { name: 'title', selector: { text: {} } },
         { type: 'grid', name: '', schema: [
           { name: 'master_toggle', selector: { boolean: {} } },
-          { name: 'icon_size', selector: { number: { min: 16, max: 120, mode: 'box' } } },
+          { name: 'haptic', selector: { boolean: {} } },
         ] },
+        { name: 'icon_size', selector: { number: { min: 16, max: 120, mode: 'box' } } },
         { name: 'style', selector: { select: { options: STYLE_OPTIONS, mode: 'dropdown' } } },
         { name: 'accent', selector: { text: {} } },
         ...actionFields('more-info'),
-      ], { master_toggle: true, ...c, entities: undefined }, (v) =>
-        this._emit({ ...prune({ ...v, type: c.type || 'custom:livicon-group-card' }), entities: c.entities || [] })));
+      ], { master_toggle: true, haptic: true, ...c, entities: undefined }, (v) => {
+        const o = prune({ ...v, type: c.type || 'custom:livicon-group-card' });
+        if (o.haptic !== false) delete o.haptic; // on is the default; keep YAML tidy
+        this._emit({ ...o, entities: c.entities || [] });
+      }));
 
       // entity list
       const h = document.createElement('h4'); h.textContent = 'Entities'; this.appendChild(h);

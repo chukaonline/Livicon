@@ -52,6 +52,7 @@ entities:
 | `accent`        | amber   | any CSS colour                                   |
 | `icon_size`     | 34      | px                                               |
 | `style`         | flat    | `flat` or `3d` (see below)                       |
+| `haptic`        | `true`  | vibrate on tap, like built-in cards (see Haptics) |
 | `tap_action`    | more-info | default for every entity (see Actions)         |
 | `hold_action`   | none    | default for every entity (see Actions)           |
 
@@ -66,7 +67,7 @@ entity: weather.home
 layout: tile        # row (default) | tile | icon
 ```
 
-Options: `entity`, `name`, `icon`, `layout`, `style`, `accent`, `icon_size`, `show_toggle`, `tap_action`, `hold_action`, and for batteries
+Options: `entity`, `name`, `icon`, `layout`, `style`, `accent`, `icon_size`, `show_toggle`, `haptic`, `tap_action`, `hold_action`, and for batteries
 `charging_entity` (any entity that is `on`/`charging` while charging — shows a lightning bolt).
 
 ### Actions
@@ -133,6 +134,23 @@ Wrong guess? Set `icon:` for that entity.
 | anything unavailable       | greys out and says "Unavailable" |
 
 Respects the browser's *reduce motion* setting.
+
+## Haptics
+
+Livicon feels like the built-in cards: it fires Home Assistant's own `haptic` event, which the HA frontend turns into a
+vibration (browsers that support it) and the **Companion app** plays as native haptics on iOS and Android.
+
+| When                                             | Feedback  |
+|--------------------------------------------------|-----------|
+| Toggle (tap, switch, group master toggle), perform-action | `light`   |
+| Hold that opens more-info / navigates / opens a URL      | `medium`  |
+| Action that can't run (unavailable, missing service/path), or a service call that fails | `failure` |
+| Plain more-info / navigate / url tap                     | none (same as HA's cards) |
+
+- Turn it off for a card, a whole group or a single entity with `haptic: false`.
+- It follows your profile: **Profile → Vibrate** must be on in the browser, and the Companion app honours the phone's own
+  haptics setting. Livicon never calls the vibration API itself, so your setting is always respected.
+- Not every device can vibrate: iPhone Safari and desktop browsers have no vibration API (the iOS Companion app does).
 
 ## 3D style
 
